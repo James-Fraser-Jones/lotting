@@ -2,8 +2,9 @@ import Browser exposing (element)
 import File exposing (File)
 import File.Select as Select exposing (file)
 import File.Download as Download exposing (string)
-import Html exposing (Html, button, text, div, table, tr, th, td, textarea)
+import Html exposing (Html, button, text, div, table, tr, th, td, textarea, input)
 import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (disabled, value)
 import Task exposing (perform)
 import Csv as C exposing (Csv, parse)
 import Maybe exposing (withDefault)
@@ -28,6 +29,7 @@ type alias Model =
 type alias LoadedCsv =
   { csv : C.Csv
   , selected : Point
+  , fileName : String
   }
 
 type alias Point =
@@ -43,11 +45,12 @@ type alias Point =
 type Msg
   = CsvRequested
   | CsvSelected File
-  | CsvLoaded String
+  | CsvLoaded String String
   | CsvRemoved
   | CsvExported
   | CellSelected Int Int
   | CellEdited String
+  | FilenameEdited String
 
 -- INIT
 
@@ -67,11 +70,11 @@ update msg model =
 
     CsvSelected file ->
       ( model
-      , Task.perform CsvLoaded (File.toString file)
+      , Task.perform (CsvLoaded <| File.name file) (File.toString file)
       )
 
-    CsvLoaded content ->
-      ( { model | data = Maybe.map (flip LoadedCsv (Point 0 0)) (C.parse content |> silence) }
+    CsvLoaded fileName fileContent ->
+      ( { model | data = Maybe.map (\x -> LoadedCsv x (Point 0 0) fileName) (C.parse fileContent |> silence) }
       , Cmd.none
       )
 
@@ -95,31 +98,45 @@ update msg model =
       , Maybe.withDefault Cmd.none <| Maybe.map exportCsv model.data
       )
 
+    FilenameEdited newText ->
+      ( { model | data = Maybe.map (newFilename newText) model.data }
+      , Cmd.none
+      )
+
 newSelected : Point -> LoadedCsv -> LoadedCsv
-newSelected point loadedCsv = { loadedCsv | selected = point }
+newSelected point loadedCsv = {loadedCsv | selected = point}
 
 newEdit : String -> LoadedCsv -> LoadedCsv
 newEdit str loadedCsv =
   let updateRecord = updateAt loadedCsv.selected.col (always str)
       newRecords = updateAt loadedCsv.selected.row updateRecord loadedCsv.csv.records
       oldCsv = loadedCsv.csv
-      newCsv = { oldCsv | records = newRecords }
-   in { loadedCsv | csv = newCsv }
+      newCsv = {oldCsv | records = newRecords}
+   in {loadedCsv | csv = newCsv}
+
+newFilename : String -> LoadedCsv -> LoadedCsv
+newFilename str loadedCsv = { loadedCsv | fileName = str }
 
 exportCsv : LoadedCsv -> Cmd Msg
 exportCsv loadedCsv =
   let unwrappedCsv = loadedCsv.csv.headers :: loadedCsv.csv.records
-      file = List.map (String.join ",") unwrappedCsv |> String.join "\r\n"
-  in  Download.string "export.csv" "text/csv" file
+      file = List.map (String.join ",") unwrappedCsv |> String.join windows_newline
+  in  Download.string loadedCsv.fileName "text/csv" file
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
   div []
-    [ button [ onClick CsvRequested ] [ text "Load CSV" ]
-    , button [ onClick CsvRemoved ] [ text "Remove CSV" ]
-    , button [ onClick CsvExported ] [ text "Export CSV" ]
+    [ div []
+        [ text "File Name:"
+        , input [ value <| Maybe.withDefault "" <| Maybe.map (.fileName) model.data, disabled (model.data == Nothing), onInput FilenameEdited ] []
+        ]
+    , div []
+        [ button [ onClick CsvRequested ] [ text "Load CSV" ]
+        , button [ onClick CsvRemoved, disabled (model.data == Nothing) ] [ text "Remove CSV" ]
+        , button [ onClick CsvExported, disabled (model.data == Nothing) ] [ text "Export CSV" ]
+        ]
     , case model.data of
         Nothing -> div [] []
         Just loadedCsv -> createTable loadedCsv
@@ -135,11 +152,11 @@ createHeaderRow =
 
 createRows : Point -> List (List String) -> List (Html Msg)
 createRows point rows =
-  zipWith (createRow point) rows (List.range 0 (List.length rows - 1))
+  List.indexedMap (createRow point) rows
 
-createRow : Point -> (List String) -> Int -> Html Msg
-createRow point elems rowNum =
-  tr [] (zipWith (createCell point rowNum) (List.range 0 (List.length elems - 1)) elems)
+createRow : Point -> Int -> (List String) -> Html Msg
+createRow point rowNum elems =
+  List.indexedMap (createCell point rowNum) elems |> tr []
 
 createCell : Point -> Int -> Int -> String -> Html Msg
 createCell point rowNum colNum elem =
@@ -164,6 +181,9 @@ silence result =
 print : a -> b -> b
 print a b = always b <| Debug.log "" (Debug.toString a)
 
+printt : a -> a
+printt a = print a a
+
 flip : (a -> b -> c) -> b -> a -> c
 flip f a b = f b a
 
@@ -186,3 +206,6 @@ updateAt n f lst =
     (_, []) -> []
     (0, (x :: xs)) -> f x :: xs
     (nn, (x :: xs)) -> x :: updateAt (nn - 1) f xs
+
+windows_newline : String
+windows_newline = "\r\n"
