@@ -1,10 +1,10 @@
-import Browser exposing (element)
+import Browser exposing (Document, document)
 import File exposing (File)
 import File.Select as Select exposing (file)
 import File.Download as Download exposing (string)
-import Html exposing (Html, button, text, div, table, tr, th, td, textarea, input)
+import Html exposing (Html, button, text, div, table, tr, th, td, textarea, input, section)
 import Html.Events exposing (onClick, onInput)
-import Html.Attributes exposing (disabled, value)
+import Html.Attributes exposing (disabled, value, class, placeholder)
 import Task exposing (perform)
 import Csv as C exposing (Csv, parse)
 import Maybe exposing (withDefault)
@@ -13,9 +13,9 @@ import Maybe exposing (withDefault)
 
 main : Program () Model Msg
 main =
-  Browser.element
+  Browser.document
     { init = init
-    , view = view
+    , view = docView
     , update = update
     , subscriptions = subscriptions
     }
@@ -125,26 +125,44 @@ exportCsv loadedCsv =
 
 -- VIEW
 
+docView : Model -> Document Msg
+docView = Document "Smart Lotter" << List.singleton << view
+
 view : Model -> Html Msg
 view model =
   div []
-    [ div []
-        [ text "File Name:"
-        , input [ value <| Maybe.withDefault "" <| Maybe.map (.fileName) model.data, disabled (model.data == Nothing), onInput FilenameEdited ] []
+    [ section [ class "section" ]
+        [ div [ class "container" ]
+            [ div [ class "columns" ]
+                [ div [ class "column is-one-quarter" ]
+                    [ div [ class "buttons has-addons" ]
+                        [ button [ onClick CsvRequested, class "button is-primary" ] [ text "Load CSV" ]
+                        , button [ onClick CsvRemoved, disabled (model.data == Nothing), class "button is-danger" ] [ text "Remove CSV" ]
+                        , button [ onClick CsvExported, disabled (model.data == Nothing), class "button is-info" ] [ text "Export CSV" ]
+                        ]
+                    ]
+                , div [ class "column is-one-fifth" ]
+                    [ input [ value <| Maybe.withDefault "" <| Maybe.map (.fileName) model.data,
+                              disabled (model.data == Nothing),
+                              onInput FilenameEdited,
+                              class "input",
+                              placeholder "File Name" ] []
+                    ]
+                ]
+            ]
         ]
-    , div []
-        [ button [ onClick CsvRequested ] [ text "Load CSV" ]
-        , button [ onClick CsvRemoved, disabled (model.data == Nothing) ] [ text "Remove CSV" ]
-        , button [ onClick CsvExported, disabled (model.data == Nothing) ] [ text "Export CSV" ]
+    , section [ class "section" ]
+        [ div [ class "container" ]
+            [ case model.data of
+                Nothing -> div [] []
+                Just loadedCsv -> createTable loadedCsv
+            ]
         ]
-    , case model.data of
-        Nothing -> div [] []
-        Just loadedCsv -> createTable loadedCsv
     ]
 
 createTable : LoadedCsv -> Html Msg
 createTable loadedCsv =
-  table [] (createHeaderRow loadedCsv.csv.headers :: createRows loadedCsv.selected loadedCsv.csv.records)
+  table [ class "table" ] (createHeaderRow loadedCsv.csv.headers :: createRows loadedCsv.selected loadedCsv.csv.records)
 
 createHeaderRow : List String -> Html Msg
 createHeaderRow =
@@ -161,7 +179,7 @@ createRow point rowNum elems =
 createCell : Point -> Int -> Int -> String -> Html Msg
 createCell point rowNum colNum elem =
   if Point rowNum colNum == point
-  then textarea [onInput CellEdited] [text elem]
+  then input [value elem, onInput CellEdited, class "input" ] []
   else td [onClick (CellSelected rowNum colNum)] [text elem]
 
 -- SUBSCRIPTIONS
