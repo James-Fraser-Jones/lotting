@@ -4051,136 +4051,6 @@ function _File_toUrl(blob)
 
 
 
-// STRINGS
-
-
-var _Parser_isSubString = F5(function(smallString, offset, row, col, bigString)
-{
-	var smallLength = smallString.length;
-	var isGood = offset + smallLength <= bigString.length;
-
-	for (var i = 0; isGood && i < smallLength; )
-	{
-		var code = bigString.charCodeAt(offset);
-		isGood =
-			smallString[i++] === bigString[offset++]
-			&& (
-				code === 0x000A /* \n */
-					? ( row++, col=1 )
-					: ( col++, (code & 0xF800) === 0xD800 ? smallString[i++] === bigString[offset++] : 1 )
-			)
-	}
-
-	return _Utils_Tuple3(isGood ? offset : -1, row, col);
-});
-
-
-
-// CHARS
-
-
-var _Parser_isSubChar = F3(function(predicate, offset, string)
-{
-	return (
-		string.length <= offset
-			? -1
-			:
-		(string.charCodeAt(offset) & 0xF800) === 0xD800
-			? (predicate(_Utils_chr(string.substr(offset, 2))) ? offset + 2 : -1)
-			:
-		(predicate(_Utils_chr(string[offset]))
-			? ((string[offset] === '\n') ? -2 : (offset + 1))
-			: -1
-		)
-	);
-});
-
-
-var _Parser_isAsciiCode = F3(function(code, offset, string)
-{
-	return string.charCodeAt(offset) === code;
-});
-
-
-
-// NUMBERS
-
-
-var _Parser_chompBase10 = F2(function(offset, string)
-{
-	for (; offset < string.length; offset++)
-	{
-		var code = string.charCodeAt(offset);
-		if (code < 0x30 || 0x39 < code)
-		{
-			return offset;
-		}
-	}
-	return offset;
-});
-
-
-var _Parser_consumeBase = F3(function(base, offset, string)
-{
-	for (var total = 0; offset < string.length; offset++)
-	{
-		var digit = string.charCodeAt(offset) - 0x30;
-		if (digit < 0 || base <= digit) break;
-		total = base * total + digit;
-	}
-	return _Utils_Tuple2(offset, total);
-});
-
-
-var _Parser_consumeBase16 = F2(function(offset, string)
-{
-	for (var total = 0; offset < string.length; offset++)
-	{
-		var code = string.charCodeAt(offset);
-		if (0x30 <= code && code <= 0x39)
-		{
-			total = 16 * total + code - 0x30;
-		}
-		else if (0x41 <= code && code <= 0x46)
-		{
-			total = 16 * total + code - 55;
-		}
-		else if (0x61 <= code && code <= 0x66)
-		{
-			total = 16 * total + code - 87;
-		}
-		else
-		{
-			break;
-		}
-	}
-	return _Utils_Tuple2(offset, total);
-});
-
-
-
-// FIND STRING
-
-
-var _Parser_findSubString = F5(function(smallString, offset, row, col, bigString)
-{
-	var newOffset = bigString.indexOf(smallString, offset);
-	var target = newOffset < 0 ? bigString.length : newOffset + smallString.length;
-
-	while (offset < target)
-	{
-		var code = bigString.charCodeAt(offset++);
-		code === 0x000A /* \n */
-			? ( col=1, row++ )
-			: ( col++, (code & 0xF800) === 0xD800 && offset++ )
-	}
-
-	return _Utils_Tuple3(newOffset, row, col);
-});
-
-
-
-
 // ELEMENT
 
 
@@ -4618,11 +4488,144 @@ function _Browser_load(url)
 		}
 	}));
 }
+
+
+
+
+// STRINGS
+
+
+var _Parser_isSubString = F5(function(smallString, offset, row, col, bigString)
+{
+	var smallLength = smallString.length;
+	var isGood = offset + smallLength <= bigString.length;
+
+	for (var i = 0; isGood && i < smallLength; )
+	{
+		var code = bigString.charCodeAt(offset);
+		isGood =
+			smallString[i++] === bigString[offset++]
+			&& (
+				code === 0x000A /* \n */
+					? ( row++, col=1 )
+					: ( col++, (code & 0xF800) === 0xD800 ? smallString[i++] === bigString[offset++] : 1 )
+			)
+	}
+
+	return _Utils_Tuple3(isGood ? offset : -1, row, col);
+});
+
+
+
+// CHARS
+
+
+var _Parser_isSubChar = F3(function(predicate, offset, string)
+{
+	return (
+		string.length <= offset
+			? -1
+			:
+		(string.charCodeAt(offset) & 0xF800) === 0xD800
+			? (predicate(_Utils_chr(string.substr(offset, 2))) ? offset + 2 : -1)
+			:
+		(predicate(_Utils_chr(string[offset]))
+			? ((string[offset] === '\n') ? -2 : (offset + 1))
+			: -1
+		)
+	);
+});
+
+
+var _Parser_isAsciiCode = F3(function(code, offset, string)
+{
+	return string.charCodeAt(offset) === code;
+});
+
+
+
+// NUMBERS
+
+
+var _Parser_chompBase10 = F2(function(offset, string)
+{
+	for (; offset < string.length; offset++)
+	{
+		var code = string.charCodeAt(offset);
+		if (code < 0x30 || 0x39 < code)
+		{
+			return offset;
+		}
+	}
+	return offset;
+});
+
+
+var _Parser_consumeBase = F3(function(base, offset, string)
+{
+	for (var total = 0; offset < string.length; offset++)
+	{
+		var digit = string.charCodeAt(offset) - 0x30;
+		if (digit < 0 || base <= digit) break;
+		total = base * total + digit;
+	}
+	return _Utils_Tuple2(offset, total);
+});
+
+
+var _Parser_consumeBase16 = F2(function(offset, string)
+{
+	for (var total = 0; offset < string.length; offset++)
+	{
+		var code = string.charCodeAt(offset);
+		if (0x30 <= code && code <= 0x39)
+		{
+			total = 16 * total + code - 0x30;
+		}
+		else if (0x41 <= code && code <= 0x46)
+		{
+			total = 16 * total + code - 55;
+		}
+		else if (0x61 <= code && code <= 0x66)
+		{
+			total = 16 * total + code - 87;
+		}
+		else
+		{
+			break;
+		}
+	}
+	return _Utils_Tuple2(offset, total);
+});
+
+
+
+// FIND STRING
+
+
+var _Parser_findSubString = F5(function(smallString, offset, row, col, bigString)
+{
+	var newOffset = bigString.indexOf(smallString, offset);
+	var target = newOffset < 0 ? bigString.length : newOffset + smallString.length;
+
+	while (offset < target)
+	{
+		var code = bigString.charCodeAt(offset++);
+		code === 0x000A /* \n */
+			? ( col=1, row++ )
+			: ( col++, (code & 0xF800) === 0xD800 && offset++ )
+	}
+
+	return _Utils_Tuple3(newOffset, row, col);
+});
 var author$project$Main$CsvExported = {$: 'CsvExported'};
 var author$project$Main$CsvRemoved = {$: 'CsvRemoved'};
 var author$project$Main$CsvRequested = {$: 'CsvRequested'};
 var author$project$Main$FilenameEdited = function (a) {
 	return {$: 'FilenameEdited', a: a};
+};
+var author$project$Main$KeyPressed = function (a) {
+	return {$: 'KeyPressed', a: a};
 };
 var elm$core$Basics$composeR = F3(
 	function (f, g, x) {
@@ -5198,6 +5201,7 @@ var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
 var elm$html$Html$th = _VirtualDom_node('th');
+var elm$html$Html$thead = _VirtualDom_node('thead');
 var elm$html$Html$tr = _VirtualDom_node('tr');
 var author$project$Main$createHeaderRow = A2(
 	elm$core$Basics$composeR,
@@ -5209,7 +5213,13 @@ var author$project$Main$createHeaderRow = A2(
 				elm$core$Basics$composeR,
 				elm$core$List$singleton,
 				elm$html$Html$th(_List_Nil)))),
-	elm$html$Html$tr(_List_Nil));
+	A2(
+		elm$core$Basics$composeR,
+		elm$html$Html$tr(_List_Nil),
+		A2(
+			elm$core$Basics$composeR,
+			elm$core$List$singleton,
+			elm$html$Html$thead(_List_Nil))));
 var author$project$Main$CellEdited = function (a) {
 	return {$: 'CellEdited', a: a};
 };
@@ -5221,6 +5231,7 @@ var author$project$Main$Point = F2(
 	function (row, col) {
 		return {col: col, row: row};
 	});
+var author$project$Main$cursor_id = 'cursor';
 var elm$html$Html$input = _VirtualDom_node('input');
 var elm$html$Html$td = _VirtualDom_node('td');
 var elm$json$Json$Encode$string = _Json_wrap;
@@ -5232,6 +5243,7 @@ var elm$html$Html$Attributes$stringProperty = F2(
 			elm$json$Json$Encode$string(string));
 	});
 var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
+var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
 var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -5285,17 +5297,7 @@ var elm$html$Html$Events$onInput = function (tagger) {
 };
 var author$project$Main$createCell = F4(
 	function (point, rowNum, colNum, elem) {
-		return _Utils_eq(
-			A2(author$project$Main$Point, rowNum, colNum),
-			point) ? A2(
-			elm$html$Html$input,
-			_List_fromArray(
-				[
-					elm$html$Html$Attributes$value(elem),
-					elm$html$Html$Events$onInput(author$project$Main$CellEdited),
-					elm$html$Html$Attributes$class('input')
-				]),
-			_List_Nil) : A2(
+		return A2(
 			elm$html$Html$td,
 			_List_fromArray(
 				[
@@ -5304,7 +5306,18 @@ var author$project$Main$createCell = F4(
 				]),
 			_List_fromArray(
 				[
-					elm$html$Html$text(elem)
+					_Utils_eq(
+					A2(author$project$Main$Point, rowNum, colNum),
+					point) ? A2(
+					elm$html$Html$input,
+					_List_fromArray(
+						[
+							elm$html$Html$Attributes$value(elem),
+							elm$html$Html$Events$onInput(author$project$Main$CellEdited),
+							elm$html$Html$Attributes$class('input'),
+							elm$html$Html$Attributes$id(author$project$Main$cursor_id)
+						]),
+					_List_Nil) : elm$html$Html$text(elem)
 				]));
 	});
 var author$project$Main$createRow = F3(
@@ -5317,20 +5330,75 @@ var author$project$Main$createRow = F3(
 				A2(author$project$Main$createCell, point, rowNum),
 				elems));
 	});
+var elm$html$Html$tbody = _VirtualDom_node('tbody');
 var author$project$Main$createRows = F2(
 	function (point, rows) {
-		return A2(
-			elm$core$List$indexedMap,
-			author$project$Main$createRow(point),
-			rows);
+		return elm$core$List$singleton(
+			A2(
+				elm$html$Html$tbody,
+				_List_Nil,
+				A2(
+					elm$core$List$indexedMap,
+					author$project$Main$createRow(point),
+					rows)));
 	});
+var author$project$Main$Down = {$: 'Down'};
+var author$project$Main$Enter = {$: 'Enter'};
+var author$project$Main$Left = {$: 'Left'};
+var author$project$Main$Other = {$: 'Other'};
+var author$project$Main$Right = {$: 'Right'};
+var author$project$Main$Tab = {$: 'Tab'};
+var author$project$Main$Up = {$: 'Up'};
+var author$project$Main$keyMapper = function (n) {
+	switch (n) {
+		case 9:
+			return author$project$Main$Tab;
+		case 13:
+			return author$project$Main$Enter;
+		case 37:
+			return author$project$Main$Left;
+		case 38:
+			return author$project$Main$Up;
+		case 39:
+			return author$project$Main$Right;
+		case 40:
+			return author$project$Main$Down;
+		default:
+			return author$project$Main$Other;
+	}
+};
+var author$project$Main$trans = function (message) {
+	return {message: message, preventDefault: false, stopPropagation: false};
+};
 var elm$html$Html$table = _VirtualDom_node('table');
+var elm$virtual_dom$VirtualDom$Custom = function (a) {
+	return {$: 'Custom', a: a};
+};
+var elm$html$Html$Events$custom = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Custom(decoder));
+	});
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var elm$html$Html$Events$keyCode = A2(elm$json$Json$Decode$field, 'keyCode', elm$json$Json$Decode$int);
 var author$project$Main$createTable = function (loadedCsv) {
 	return A2(
 		elm$html$Html$table,
 		_List_fromArray(
 			[
-				elm$html$Html$Attributes$class('table')
+				elm$html$Html$Attributes$class('table is-bordered is-striped is-hoverable is-fullwidth'),
+				A2(
+				elm$html$Html$Events$custom,
+				'keydown',
+				A2(
+					elm$json$Json$Decode$map,
+					A2(
+						elm$core$Basics$composeR,
+						author$project$Main$keyMapper,
+						A2(elm$core$Basics$composeR, author$project$Main$KeyPressed, author$project$Main$trans)),
+					elm$html$Html$Events$keyCode))
 			]),
 		A2(
 			elm$core$List$cons,
@@ -5437,7 +5505,7 @@ var author$project$Main$view = function (model) {
 															]),
 														_List_fromArray(
 															[
-																elm$html$Html$text('Remove CSV')
+																elm$html$Html$text('Remove')
 															])),
 														A2(
 														elm$html$Html$button,
@@ -5450,7 +5518,7 @@ var author$project$Main$view = function (model) {
 															]),
 														_List_fromArray(
 															[
-																elm$html$Html$text('Export CSV')
+																elm$html$Html$text('Export')
 															]))
 													]))
 											])),
@@ -5558,6 +5626,7 @@ var author$project$Main$LoadedCsv = F3(
 	function (csv, selected, fileName) {
 		return {csv: csv, fileName: fileName, selected: selected};
 	});
+var author$project$Main$csv_mime = 'text/csv';
 var author$project$Main$windows_newline = '\r\n';
 var elm$core$Basics$never = function (_n0) {
 	never:
@@ -5667,8 +5736,186 @@ var author$project$Main$exportCsv = function (loadedCsv) {
 			elm$core$List$map,
 			elm$core$String$join(','),
 			unwrappedCsv));
-	return A3(elm$file$File$Download$string, loadedCsv.fileName, 'text/csv', file);
+	return A3(
+		elm$file$File$Download$string,
+		(loadedCsv.fileName === '') ? 'export.csv' : loadedCsv.fileName,
+		author$project$Main$csv_mime,
+		file);
 };
+var author$project$Main$Done = {$: 'Done'};
+var author$project$Main$Error = function (a) {
+	return {$: 'Error', a: a};
+};
+var author$project$Main$handleError = function (result) {
+	if (result.$ === 'Err') {
+		var message = result.a.a;
+		return author$project$Main$Error(message);
+	} else {
+		return author$project$Main$Done;
+	}
+};
+var elm$browser$Browser$External = function (a) {
+	return {$: 'External', a: a};
+};
+var elm$browser$Browser$Internal = function (a) {
+	return {$: 'Internal', a: a};
+};
+var elm$browser$Browser$Dom$NotFound = function (a) {
+	return {$: 'NotFound', a: a};
+};
+var elm$core$String$length = _String_length;
+var elm$core$String$slice = _String_slice;
+var elm$core$String$dropLeft = F2(
+	function (n, string) {
+		return (n < 1) ? string : A3(
+			elm$core$String$slice,
+			n,
+			elm$core$String$length(string),
+			string);
+	});
+var elm$core$String$startsWith = _String_startsWith;
+var elm$url$Url$Http = {$: 'Http'};
+var elm$url$Url$Https = {$: 'Https'};
+var elm$core$String$indexes = _String_indexes;
+var elm$core$String$isEmpty = function (string) {
+	return string === '';
+};
+var elm$core$String$left = F2(
+	function (n, string) {
+		return (n < 1) ? '' : A3(elm$core$String$slice, 0, n, string);
+	});
+var elm$core$String$contains = _String_contains;
+var elm$core$String$toInt = _String_toInt;
+var elm$url$Url$Url = F6(
+	function (protocol, host, port_, path, query, fragment) {
+		return {fragment: fragment, host: host, path: path, port_: port_, protocol: protocol, query: query};
+	});
+var elm$url$Url$chompBeforePath = F5(
+	function (protocol, path, params, frag, str) {
+		if (elm$core$String$isEmpty(str) || A2(elm$core$String$contains, '@', str)) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var _n0 = A2(elm$core$String$indexes, ':', str);
+			if (!_n0.b) {
+				return elm$core$Maybe$Just(
+					A6(elm$url$Url$Url, protocol, str, elm$core$Maybe$Nothing, path, params, frag));
+			} else {
+				if (!_n0.b.b) {
+					var i = _n0.a;
+					var _n1 = elm$core$String$toInt(
+						A2(elm$core$String$dropLeft, i + 1, str));
+					if (_n1.$ === 'Nothing') {
+						return elm$core$Maybe$Nothing;
+					} else {
+						var port_ = _n1;
+						return elm$core$Maybe$Just(
+							A6(
+								elm$url$Url$Url,
+								protocol,
+								A2(elm$core$String$left, i, str),
+								port_,
+								path,
+								params,
+								frag));
+					}
+				} else {
+					return elm$core$Maybe$Nothing;
+				}
+			}
+		}
+	});
+var elm$url$Url$chompBeforeQuery = F4(
+	function (protocol, params, frag, str) {
+		if (elm$core$String$isEmpty(str)) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var _n0 = A2(elm$core$String$indexes, '/', str);
+			if (!_n0.b) {
+				return A5(elm$url$Url$chompBeforePath, protocol, '/', params, frag, str);
+			} else {
+				var i = _n0.a;
+				return A5(
+					elm$url$Url$chompBeforePath,
+					protocol,
+					A2(elm$core$String$dropLeft, i, str),
+					params,
+					frag,
+					A2(elm$core$String$left, i, str));
+			}
+		}
+	});
+var elm$url$Url$chompBeforeFragment = F3(
+	function (protocol, frag, str) {
+		if (elm$core$String$isEmpty(str)) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var _n0 = A2(elm$core$String$indexes, '?', str);
+			if (!_n0.b) {
+				return A4(elm$url$Url$chompBeforeQuery, protocol, elm$core$Maybe$Nothing, frag, str);
+			} else {
+				var i = _n0.a;
+				return A4(
+					elm$url$Url$chompBeforeQuery,
+					protocol,
+					elm$core$Maybe$Just(
+						A2(elm$core$String$dropLeft, i + 1, str)),
+					frag,
+					A2(elm$core$String$left, i, str));
+			}
+		}
+	});
+var elm$url$Url$chompAfterProtocol = F2(
+	function (protocol, str) {
+		if (elm$core$String$isEmpty(str)) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var _n0 = A2(elm$core$String$indexes, '#', str);
+			if (!_n0.b) {
+				return A3(elm$url$Url$chompBeforeFragment, protocol, elm$core$Maybe$Nothing, str);
+			} else {
+				var i = _n0.a;
+				return A3(
+					elm$url$Url$chompBeforeFragment,
+					protocol,
+					elm$core$Maybe$Just(
+						A2(elm$core$String$dropLeft, i + 1, str)),
+					A2(elm$core$String$left, i, str));
+			}
+		}
+	});
+var elm$url$Url$fromString = function (str) {
+	return A2(elm$core$String$startsWith, 'http://', str) ? A2(
+		elm$url$Url$chompAfterProtocol,
+		elm$url$Url$Http,
+		A2(elm$core$String$dropLeft, 7, str)) : (A2(elm$core$String$startsWith, 'https://', str) ? A2(
+		elm$url$Url$chompAfterProtocol,
+		elm$url$Url$Https,
+		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
+};
+var elm$browser$Browser$Dom$focus = _Browser_call('focus');
+var elm$core$Task$onError = _Scheduler_onError;
+var elm$core$Task$attempt = F2(
+	function (resultToMessage, task) {
+		return elm$core$Task$command(
+			elm$core$Task$Perform(
+				A2(
+					elm$core$Task$onError,
+					A2(
+						elm$core$Basics$composeL,
+						A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
+						elm$core$Result$Err),
+					A2(
+						elm$core$Task$andThen,
+						A2(
+							elm$core$Basics$composeL,
+							A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
+							elm$core$Result$Ok),
+						task))));
+	});
+var author$project$Main$focusCursor = A2(
+	elm$core$Task$attempt,
+	author$project$Main$handleError,
+	elm$browser$Browser$Dom$focus(author$project$Main$cursor_id));
 var author$project$Main$updateAt = F3(
 	function (n, f, lst) {
 		var _n0 = _Utils_Tuple2(n, lst);
@@ -5734,6 +5981,91 @@ var author$project$Main$silence = function (result) {
 		return elm$core$Maybe$Nothing;
 	}
 };
+var elm$core$Debug$log = _Debug_log;
+var elm$core$Debug$toString = _Debug_toString;
+var author$project$Main$print = F2(
+	function (a, b) {
+		return A2(
+			elm$core$Basics$always,
+			b,
+			A2(
+				elm$core$Debug$log,
+				'',
+				elm$core$Debug$toString(a)));
+	});
+var author$project$Main$printt = function (a) {
+	return A2(author$project$Main$print, a, a);
+};
+var elm$core$Basics$min = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) < 0) ? x : y;
+	});
+var author$project$Main$updateKey = F2(
+	function (key, loadedCsv) {
+		var old = loadedCsv.selected;
+		var lastY = author$project$Main$printt(
+			elm$core$List$length(loadedCsv.csv.records) - 1);
+		var lastX = author$project$Main$printt(
+			elm$core$List$length(loadedCsv.csv.headers) - 1);
+		switch (key.$) {
+			case 'Tab':
+				return _Utils_update(
+					loadedCsv,
+					{
+						selected: A2(
+							author$project$Main$Point,
+							old.row,
+							A2(elm$core$Basics$min, old.col + 1, lastX))
+					});
+			case 'Enter':
+				return _Utils_update(
+					loadedCsv,
+					{
+						selected: A2(
+							author$project$Main$Point,
+							A2(elm$core$Basics$min, old.row + 1, lastY),
+							old.col)
+					});
+			case 'Left':
+				return _Utils_update(
+					loadedCsv,
+					{
+						selected: A2(
+							author$project$Main$Point,
+							old.row,
+							A2(elm$core$Basics$max, old.col - 1, 0))
+					});
+			case 'Up':
+				return _Utils_update(
+					loadedCsv,
+					{
+						selected: A2(
+							author$project$Main$Point,
+							A2(elm$core$Basics$max, old.row - 1, 0),
+							old.col)
+					});
+			case 'Right':
+				return _Utils_update(
+					loadedCsv,
+					{
+						selected: A2(
+							author$project$Main$Point,
+							old.row,
+							A2(elm$core$Basics$min, old.col + 1, lastX))
+					});
+			case 'Down':
+				return _Utils_update(
+					loadedCsv,
+					{
+						selected: A2(
+							author$project$Main$Point,
+							A2(elm$core$Basics$min, old.row + 1, lastY),
+							old.col)
+					});
+			default:
+				return loadedCsv;
+		}
+	});
 var elm$file$File$name = _File_name;
 var elm$file$File$toString = _File_toString;
 var elm$file$File$Select$file = F2(
@@ -6043,9 +6375,6 @@ var elm$parser$Parser$Advanced$Token = F2(
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var elm$core$String$isEmpty = function (string) {
-	return string === '';
-};
 var elm$parser$Parser$Advanced$AddRight = F2(
 	function (a, b) {
 		return {$: 'AddRight', a: a, b: b};
@@ -6101,7 +6430,6 @@ var elm$core$String$replace = F3(
 			after,
 			A2(elm$core$String$split, before, string));
 	});
-var elm$core$String$slice = _String_slice;
 var elm$parser$Parser$Advanced$mapChompedString = F2(
 	function (func, _n0) {
 		var parse = _n0.a;
@@ -6417,13 +6745,18 @@ var periodic$elm_csv$Csv$parse = function (s) {
 var author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
+			case 'Done':
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			case 'Error':
+				var message = msg.a;
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 			case 'CsvRequested':
 				return _Utils_Tuple2(
 					model,
 					A2(
 						elm$file$File$Select$file,
 						_List_fromArray(
-							['text/csv']),
+							[author$project$Main$csv_mime]),
 						author$project$Main$CsvSelected));
 			case 'CsvSelected':
 				var file = msg.a;
@@ -6453,13 +6786,20 @@ var author$project$Main$update = F2(
 								author$project$Main$silence(
 									periodic$elm_csv$Csv$parse(fileContent)))
 						}),
-					elm$core$Platform$Cmd$none);
+					author$project$Main$focusCursor);
 			case 'CsvRemoved':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{data: elm$core$Maybe$Nothing}),
 					elm$core$Platform$Cmd$none);
+			case 'CsvExported':
+				return _Utils_Tuple2(
+					model,
+					A2(
+						elm$core$Maybe$withDefault,
+						elm$core$Platform$Cmd$none,
+						A2(elm$core$Maybe$map, author$project$Main$exportCsv, model.data)));
 			case 'CellSelected':
 				var rowNum = msg.a;
 				var colNum = msg.b;
@@ -6473,7 +6813,7 @@ var author$project$Main$update = F2(
 									A2(author$project$Main$Point, rowNum, colNum)),
 								model.data)
 						}),
-					elm$core$Platform$Cmd$none);
+					author$project$Main$focusCursor);
 			case 'CellEdited':
 				var newText = msg.a;
 				return _Utils_Tuple2(
@@ -6486,14 +6826,7 @@ var author$project$Main$update = F2(
 								model.data)
 						}),
 					elm$core$Platform$Cmd$none);
-			case 'CsvExported':
-				return _Utils_Tuple2(
-					model,
-					A2(
-						elm$core$Maybe$withDefault,
-						elm$core$Platform$Cmd$none,
-						A2(elm$core$Maybe$map, author$project$Main$exportCsv, model.data)));
-			default:
+			case 'FilenameEdited':
 				var newText = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -6505,142 +6838,20 @@ var author$project$Main$update = F2(
 								model.data)
 						}),
 					elm$core$Platform$Cmd$none);
+			default:
+				var key = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							data: A2(
+								elm$core$Maybe$map,
+								author$project$Main$updateKey(key),
+								model.data)
+						}),
+					author$project$Main$focusCursor);
 		}
 	});
-var elm$browser$Browser$External = function (a) {
-	return {$: 'External', a: a};
-};
-var elm$browser$Browser$Internal = function (a) {
-	return {$: 'Internal', a: a};
-};
-var elm$browser$Browser$Dom$NotFound = function (a) {
-	return {$: 'NotFound', a: a};
-};
-var elm$core$String$length = _String_length;
-var elm$core$String$dropLeft = F2(
-	function (n, string) {
-		return (n < 1) ? string : A3(
-			elm$core$String$slice,
-			n,
-			elm$core$String$length(string),
-			string);
-	});
-var elm$core$String$startsWith = _String_startsWith;
-var elm$url$Url$Http = {$: 'Http'};
-var elm$url$Url$Https = {$: 'Https'};
-var elm$core$String$indexes = _String_indexes;
-var elm$core$String$left = F2(
-	function (n, string) {
-		return (n < 1) ? '' : A3(elm$core$String$slice, 0, n, string);
-	});
-var elm$core$String$contains = _String_contains;
-var elm$core$String$toInt = _String_toInt;
-var elm$url$Url$Url = F6(
-	function (protocol, host, port_, path, query, fragment) {
-		return {fragment: fragment, host: host, path: path, port_: port_, protocol: protocol, query: query};
-	});
-var elm$url$Url$chompBeforePath = F5(
-	function (protocol, path, params, frag, str) {
-		if (elm$core$String$isEmpty(str) || A2(elm$core$String$contains, '@', str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, ':', str);
-			if (!_n0.b) {
-				return elm$core$Maybe$Just(
-					A6(elm$url$Url$Url, protocol, str, elm$core$Maybe$Nothing, path, params, frag));
-			} else {
-				if (!_n0.b.b) {
-					var i = _n0.a;
-					var _n1 = elm$core$String$toInt(
-						A2(elm$core$String$dropLeft, i + 1, str));
-					if (_n1.$ === 'Nothing') {
-						return elm$core$Maybe$Nothing;
-					} else {
-						var port_ = _n1;
-						return elm$core$Maybe$Just(
-							A6(
-								elm$url$Url$Url,
-								protocol,
-								A2(elm$core$String$left, i, str),
-								port_,
-								path,
-								params,
-								frag));
-					}
-				} else {
-					return elm$core$Maybe$Nothing;
-				}
-			}
-		}
-	});
-var elm$url$Url$chompBeforeQuery = F4(
-	function (protocol, params, frag, str) {
-		if (elm$core$String$isEmpty(str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, '/', str);
-			if (!_n0.b) {
-				return A5(elm$url$Url$chompBeforePath, protocol, '/', params, frag, str);
-			} else {
-				var i = _n0.a;
-				return A5(
-					elm$url$Url$chompBeforePath,
-					protocol,
-					A2(elm$core$String$dropLeft, i, str),
-					params,
-					frag,
-					A2(elm$core$String$left, i, str));
-			}
-		}
-	});
-var elm$url$Url$chompBeforeFragment = F3(
-	function (protocol, frag, str) {
-		if (elm$core$String$isEmpty(str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, '?', str);
-			if (!_n0.b) {
-				return A4(elm$url$Url$chompBeforeQuery, protocol, elm$core$Maybe$Nothing, frag, str);
-			} else {
-				var i = _n0.a;
-				return A4(
-					elm$url$Url$chompBeforeQuery,
-					protocol,
-					elm$core$Maybe$Just(
-						A2(elm$core$String$dropLeft, i + 1, str)),
-					frag,
-					A2(elm$core$String$left, i, str));
-			}
-		}
-	});
-var elm$url$Url$chompAfterProtocol = F2(
-	function (protocol, str) {
-		if (elm$core$String$isEmpty(str)) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var _n0 = A2(elm$core$String$indexes, '#', str);
-			if (!_n0.b) {
-				return A3(elm$url$Url$chompBeforeFragment, protocol, elm$core$Maybe$Nothing, str);
-			} else {
-				var i = _n0.a;
-				return A3(
-					elm$url$Url$chompBeforeFragment,
-					protocol,
-					elm$core$Maybe$Just(
-						A2(elm$core$String$dropLeft, i + 1, str)),
-					A2(elm$core$String$left, i, str));
-			}
-		}
-	});
-var elm$url$Url$fromString = function (str) {
-	return A2(elm$core$String$startsWith, 'http://', str) ? A2(
-		elm$url$Url$chompAfterProtocol,
-		elm$url$Url$Http,
-		A2(elm$core$String$dropLeft, 7, str)) : (A2(elm$core$String$startsWith, 'https://', str) ? A2(
-		elm$url$Url$chompAfterProtocol,
-		elm$url$Url$Https,
-		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
-};
 var elm$browser$Browser$document = _Browser_document;
 var author$project$Main$main = elm$browser$Browser$document(
 	{init: author$project$Main$init, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$Main$docView});
