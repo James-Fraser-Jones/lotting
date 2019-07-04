@@ -1,1 +1,20 @@
+table {
+  table-layout: fixed !important;
+}
 
+.cursorCell {
+  padding: 0 !important;
+}
+
+.table-fixed {
+  width: 100%;
+}
+
+.table-fixed thead th {
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+    z-index: 999;
+    background-color: hsl(171, 100%, 41%) !important;
+    color: white !important;
+}

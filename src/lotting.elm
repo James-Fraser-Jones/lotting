@@ -1,11 +1,12 @@
 import Browser exposing (Document, document)
-import Browser.Dom as Dom exposing (Error, focus)
+import Browser.Dom as Dom exposing (Error, focus, setViewport)
 import File exposing (File)
 import File.Select as Select exposing (file)
 import File.Download as Download exposing (string)
 import Html exposing (Html, Attribute, button, text, div, table, thead, tbody, tr, th, td, textarea, input, section)
 import Html.Events exposing (onClick, onInput, on, keyCode, custom)
 import Html.Attributes exposing (disabled, value, class, placeholder, autofocus, id, style)
+import Html.Lazy as Lazy exposing (lazy)
 import Task exposing (perform, attempt)
 import Csv as C exposing (Csv, parse)
 import Maybe exposing (withDefault)
@@ -104,7 +105,7 @@ update msg model =
 
     CsvLoaded fileName fileContent ->
       ( { model | data = Maybe.map (\x -> LoadedCsv x (Point 0 0) fileName) (C.parse fileContent |> silence) }
-      , focusCursor
+      , focusCursor 0
       )
 
     CsvRemoved ->
@@ -119,7 +120,7 @@ update msg model =
 
     CellSelected rowNum colNum ->
       ( { model | data = Maybe.map (newSelected (Point rowNum colNum)) model.data }
-      , focusCursor
+      , focusCursor rowNum
       )
 
     CellEdited newText ->
@@ -133,12 +134,20 @@ update msg model =
       )
 
     KeyPressed key ->
-      ( { model | data = Maybe.map (updateKey key) model.data }
-      , focusCursor
-      )
+      let newModel = { model | data = Maybe.map (updateKey key) model.data }
+      in ( newModel
+         , Maybe.withDefault Cmd.none <| Maybe.map findRownum newModel.data
+         )
 
-focusCursor : Cmd Msg
-focusCursor = Task.attempt handleError <| Dom.focus cursor_id
+findRownum : LoadedCsv -> Cmd Msg
+findRownum loadedCsv =
+  focusCursor loadedCsv.selected.row
+
+focusCursor : Int -> Cmd Msg
+focusCursor rowNum =
+  Cmd.batch [ Dom.focus cursor_id |> Task.attempt handleError
+            , if rowNum == 0 then resetViewport else Cmd.none
+            ]
 
 newSelected : Point -> LoadedCsv -> LoadedCsv
 newSelected point loadedCsv = {loadedCsv | selected = point}
@@ -160,6 +169,9 @@ exportCsv loadedCsv =
       file = List.map (String.join ",") unwrappedCsv |> String.join windows_newline
   in  Download.string (if loadedCsv.fileName == "" then "export.csv" else loadedCsv.fileName) csv_mime file
 
+resetViewport : Cmd Msg
+resetViewport = Task.perform (\_ -> Done) (Dom.setViewport 0 0)
+
 handleError : Result Error () -> Msg
 handleError result =
   case result of
@@ -180,8 +192,8 @@ keyMapper n =
 updateKey : Key -> LoadedCsv -> LoadedCsv
 updateKey key loadedCsv =
   let old = loadedCsv.selected
-      lastX = printt <| List.length loadedCsv.csv.headers - 1
-      lastY = printt <| List.length loadedCsv.csv.records - 1
+      lastX = List.length loadedCsv.csv.headers - 1
+      lastY = List.length loadedCsv.csv.records - 1
   in case key of
     Tab -> { loadedCsv | selected = Point old.row (min (old.col + 1) lastX) }
     Enter -> { loadedCsv | selected = Point (min (old.row + 1) lastY) old.col }
@@ -194,11 +206,11 @@ updateKey key loadedCsv =
 -- VIEW
 
 docView : Model -> Document Msg
-docView = Document "Smart Lotter" << List.singleton << view
+docView = Lazy.lazy view >> List.singleton >> Document "Smart Lotter"
 
 view : Model -> Html Msg
 view model =
-  div []
+  div [ id "all" ]
     [ section [ class "section" ]
         [ div [ class "container" ]
             [ div [ class "columns" ]
@@ -228,22 +240,18 @@ view model =
         ]
     ]
 
-trans : Msg -> { message : Msg, stopPropagation : Bool, preventDefault : Bool}
-trans message = { message = message, stopPropagation = False, preventDefault = False }
-
 createTable : LoadedCsv -> Html Msg
 createTable loadedCsv =
-  table [ class "table is-bordered is-striped is-hoverable is-fullwidth"
-        , custom "keydown" (Decode.map (keyMapper >> KeyPressed >> trans) keyCode)
-        ] (createHeaderRow loadedCsv.csv.headers :: createRows loadedCsv.selected loadedCsv.csv.records)
+  table [ class "table is-bordered is-striped is-hoverable is-fullwidth table-fixed"
+        , on "keydown" (Decode.map (keyMapper >> KeyPressed) keyCode)
+        ] [createHead loadedCsv.csv.headers, createBody loadedCsv.selected loadedCsv.csv.records]
 
-createHeaderRow : List String -> Html Msg
-createHeaderRow =
-  List.map (text >> List.singleton >> th []) >> tr [] >> List.singleton >> thead []
+createHead : List String -> Html Msg
+createHead = List.map (text >> List.singleton >> th []) >> tr [] >> List.singleton >> thead []
 
-createRows : Point -> List (List String) -> List (Html Msg)
-createRows point rows =
-  List.indexedMap (createRow point) rows |> tbody [] |> List.singleton
+createBody : Point -> List (List String) -> Html Msg
+createBody point rows =
+  List.indexedMap (createRow point) rows |> tbody []
 
 createRow : Point -> Int -> (List String) -> Html Msg
 createRow point rowNum elems =
@@ -251,11 +259,9 @@ createRow point rowNum elems =
 
 createCell : Point -> Int -> Int -> String -> Html Msg
 createCell point rowNum colNum elem =
-  td [onClick (CellSelected rowNum colNum)]
-    [ if Point rowNum colNum == point
-      then input [value elem, onInput CellEdited, class "input", id cursor_id] []
-      else text elem
-    ]
+  if Point rowNum colNum == point
+  then td [ class "cursorCell" ] [ input [ value elem, onInput CellEdited, class "input", id cursor_id ] [] ]
+  else td [ onClick (CellSelected rowNum colNum) ] [ text elem ]
 
 -- SUBSCRIPTIONS
 
