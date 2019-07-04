@@ -1,13 +1,16 @@
-table {
-  table-layout: fixed !important;
-}
-
 .cursorCell {
   padding: 0 !important;
 }
 
 .table-fixed {
+  overflow: auto;
+  height: 100vh;
+  padding-bottom: 0 !important;
+}
+
+.table-fixed table {
   width: 100%;
+  table-layout: fixed;
 }
 
 .table-fixed thead th {
@@ -15,6 +18,11 @@ table {
     position: -webkit-sticky;
     top: 0;
     z-index: 999;
-    background-color: hsl(171, 100%, 41%) !important;
+    background-color: hsl(171, 100%, 41%);
     color: white !important;
+}
+
+.table-empty {
+  height: 100vh;
+  background-color: hsl(0, 0%, 96%) !important;
 }

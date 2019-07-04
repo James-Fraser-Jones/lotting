@@ -5375,28 +5375,50 @@ var author$project$Main$keyMapper = function (n) {
 			return author$project$Main$Other;
 	}
 };
+var elm$html$Html$div = _VirtualDom_node('div');
 var elm$html$Html$table = _VirtualDom_node('table');
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var elm$html$Html$Events$keyCode = A2(elm$json$Json$Decode$field, 'keyCode', elm$json$Json$Decode$int);
-var author$project$Main$createTable = function (loadedCsv) {
-	return A2(
-		elm$html$Html$table,
-		_List_fromArray(
-			[
-				elm$html$Html$Attributes$class('table is-bordered is-striped is-hoverable is-fullwidth table-fixed'),
-				A2(
-				elm$html$Html$Events$on,
-				'keydown',
-				A2(
-					elm$json$Json$Decode$map,
-					A2(elm$core$Basics$composeR, author$project$Main$keyMapper, author$project$Main$KeyPressed),
-					elm$html$Html$Events$keyCode))
-			]),
-		_List_fromArray(
-			[
-				author$project$Main$createHead(loadedCsv.csv.headers),
-				A2(author$project$Main$createBody, loadedCsv.selected, loadedCsv.csv.records)
-			]));
+var author$project$Main$createTable = function (data) {
+	if (data.$ === 'Nothing') {
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					elm$html$Html$Attributes$class('table-empty column is-three-quarters')
+				]),
+			_List_Nil);
+	} else {
+		var loadedCsv = data.a;
+		return A2(
+			elm$html$Html$div,
+			_List_fromArray(
+				[
+					elm$html$Html$Attributes$class('table-fixed column is-three-quarters'),
+					elm$html$Html$Attributes$id('tableViewport')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$table,
+					_List_fromArray(
+						[
+							elm$html$Html$Attributes$class('table is-bordered is-striped is-hoverable is-fullwidth'),
+							A2(
+							elm$html$Html$Events$on,
+							'keydown',
+							A2(
+								elm$json$Json$Decode$map,
+								A2(elm$core$Basics$composeR, author$project$Main$keyMapper, author$project$Main$KeyPressed),
+								elm$html$Html$Events$keyCode))
+						]),
+					_List_fromArray(
+						[
+							author$project$Main$createHead(loadedCsv.csv.headers),
+							A2(author$project$Main$createBody, loadedCsv.selected, loadedCsv.csv.records)
+						]))
+				]));
+	}
 };
 var elm$core$Maybe$map = F2(
 	function (f, maybe) {
@@ -5418,8 +5440,7 @@ var elm$core$Maybe$withDefault = F2(
 		}
 	});
 var elm$html$Html$button = _VirtualDom_node('button');
-var elm$html$Html$div = _VirtualDom_node('div');
-var elm$html$Html$section = _VirtualDom_node('section');
+var elm$html$Html$h2 = _VirtualDom_node('h2');
 var elm$json$Json$Encode$bool = _Json_wrap;
 var elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
@@ -5440,10 +5461,10 @@ var author$project$Main$view = function (model) {
 		_List_fromArray(
 			[
 				A2(
-				elm$html$Html$section,
+				elm$html$Html$div,
 				_List_fromArray(
 					[
-						elm$html$Html$Attributes$class('section')
+						elm$html$Html$Attributes$class('columns')
 					]),
 				_List_fromArray(
 					[
@@ -5451,132 +5472,89 @@ var author$project$Main$view = function (model) {
 						elm$html$Html$div,
 						_List_fromArray(
 							[
-								elm$html$Html$Attributes$class('container')
+								elm$html$Html$Attributes$class('column is-one-quarter section')
 							]),
 						_List_fromArray(
 							[
 								A2(
+								elm$html$Html$h2,
+								_List_fromArray(
+									[
+										elm$html$Html$Attributes$class('title is-2')
+									]),
+								_List_fromArray(
+									[
+										elm$html$Html$text('Smart Lotter')
+									])),
+								A2(
 								elm$html$Html$div,
 								_List_fromArray(
 									[
-										elm$html$Html$Attributes$class('columns')
+										elm$html$Html$Attributes$class('buttons has-addons')
 									]),
 								_List_fromArray(
 									[
 										A2(
-										elm$html$Html$div,
+										elm$html$Html$button,
 										_List_fromArray(
 											[
-												elm$html$Html$Attributes$class('column is-one-quarter')
+												elm$html$Html$Events$onClick(author$project$Main$CsvRequested),
+												elm$html$Html$Attributes$class('button is-primary')
 											]),
 										_List_fromArray(
 											[
-												A2(
-												elm$html$Html$div,
-												_List_fromArray(
-													[
-														elm$html$Html$Attributes$class('buttons has-addons')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														elm$html$Html$button,
-														_List_fromArray(
-															[
-																elm$html$Html$Events$onClick(author$project$Main$CsvRequested),
-																elm$html$Html$Attributes$class('button is-primary')
-															]),
-														_List_fromArray(
-															[
-																elm$html$Html$text('Load CSV')
-															])),
-														A2(
-														elm$html$Html$button,
-														_List_fromArray(
-															[
-																elm$html$Html$Events$onClick(author$project$Main$CsvRemoved),
-																elm$html$Html$Attributes$disabled(
-																_Utils_eq(model.data, elm$core$Maybe$Nothing)),
-																elm$html$Html$Attributes$class('button is-danger')
-															]),
-														_List_fromArray(
-															[
-																elm$html$Html$text('Remove')
-															])),
-														A2(
-														elm$html$Html$button,
-														_List_fromArray(
-															[
-																elm$html$Html$Events$onClick(author$project$Main$CsvExported),
-																elm$html$Html$Attributes$disabled(
-																_Utils_eq(model.data, elm$core$Maybe$Nothing)),
-																elm$html$Html$Attributes$class('button is-info')
-															]),
-														_List_fromArray(
-															[
-																elm$html$Html$text('Export')
-															]))
-													]))
+												elm$html$Html$text('Import')
 											])),
 										A2(
-										elm$html$Html$div,
+										elm$html$Html$button,
 										_List_fromArray(
 											[
-												elm$html$Html$Attributes$class('column is-one-fifth')
+												elm$html$Html$Events$onClick(author$project$Main$CsvRemoved),
+												elm$html$Html$Attributes$disabled(
+												_Utils_eq(model.data, elm$core$Maybe$Nothing)),
+												elm$html$Html$Attributes$class('button is-danger')
 											]),
 										_List_fromArray(
 											[
-												A2(
-												elm$html$Html$input,
-												_List_fromArray(
-													[
-														elm$html$Html$Attributes$value(
-														A2(
-															elm$core$Maybe$withDefault,
-															'',
-															A2(
-																elm$core$Maybe$map,
-																function ($) {
-																	return $.fileName;
-																},
-																model.data))),
-														elm$html$Html$Attributes$disabled(
-														_Utils_eq(model.data, elm$core$Maybe$Nothing)),
-														elm$html$Html$Events$onInput(author$project$Main$FilenameEdited),
-														elm$html$Html$Attributes$class('input'),
-														elm$html$Html$Attributes$placeholder('File Name')
-													]),
-												_List_Nil)
+												elm$html$Html$text('Remove')
+											])),
+										A2(
+										elm$html$Html$button,
+										_List_fromArray(
+											[
+												elm$html$Html$Events$onClick(author$project$Main$CsvExported),
+												elm$html$Html$Attributes$disabled(
+												_Utils_eq(model.data, elm$core$Maybe$Nothing)),
+												elm$html$Html$Attributes$class('button is-info')
+											]),
+										_List_fromArray(
+											[
+												elm$html$Html$text('Export')
 											]))
-									]))
-							]))
-					])),
-				A2(
-				elm$html$Html$section,
-				_List_fromArray(
-					[
-						elm$html$Html$Attributes$class('section')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						elm$html$Html$div,
-						_List_fromArray(
-							[
-								elm$html$Html$Attributes$class('container')
-							]),
-						_List_fromArray(
-							[
-								function () {
-								var _n0 = model.data;
-								if (_n0.$ === 'Nothing') {
-									return A2(elm$html$Html$div, _List_Nil, _List_Nil);
-								} else {
-									var loadedCsv = _n0.a;
-									return author$project$Main$createTable(loadedCsv);
-								}
-							}()
-							]))
+									])),
+								A2(
+								elm$html$Html$input,
+								_List_fromArray(
+									[
+										elm$html$Html$Attributes$value(
+										A2(
+											elm$core$Maybe$withDefault,
+											'',
+											A2(
+												elm$core$Maybe$map,
+												function ($) {
+													return $.fileName;
+												},
+												model.data))),
+										elm$html$Html$Attributes$disabled(
+										_Utils_eq(model.data, elm$core$Maybe$Nothing)),
+										elm$html$Html$Events$onInput(author$project$Main$FilenameEdited),
+										elm$html$Html$Attributes$class('input'),
+										elm$html$Html$Attributes$placeholder('File Name')
+									]),
+								_List_Nil)
+							])),
+						author$project$Main$createTable(model.data)
 					]))
 			]));
 };
@@ -5885,14 +5863,8 @@ var elm$url$Url$fromString = function (str) {
 		elm$url$Url$Https,
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
-var elm$browser$Browser$Dom$setViewport = _Browser_setViewport;
-var author$project$Main$resetViewport = A2(
-	elm$core$Task$perform,
-	function (_n0) {
-		return author$project$Main$Done;
-	},
-	A2(elm$browser$Browser$Dom$setViewport, 0, 0));
-var elm$browser$Browser$Dom$focus = _Browser_call('focus');
+var elm$browser$Browser$Dom$getViewportOf = _Browser_getViewportOf;
+var elm$browser$Browser$Dom$setViewportOf = _Browser_setViewportOf;
 var elm$core$Basics$composeL = F3(
 	function (g, f, x) {
 		return g(
@@ -5917,6 +5889,18 @@ var elm$core$Task$attempt = F2(
 							elm$core$Result$Ok),
 						task))));
 	});
+var author$project$Main$jumpToTop = function (viewPortId) {
+	return A2(
+		elm$core$Task$attempt,
+		author$project$Main$handleError,
+		A2(
+			elm$core$Task$andThen,
+			function (info) {
+				return A3(elm$browser$Browser$Dom$setViewportOf, viewPortId, info.viewport.x, 0);
+			},
+			elm$browser$Browser$Dom$getViewportOf(viewPortId)));
+};
+var elm$browser$Browser$Dom$focus = _Browser_call('focus');
 var author$project$Main$focusCursor = function (rowNum) {
 	return elm$core$Platform$Cmd$batch(
 		_List_fromArray(
@@ -5925,7 +5909,7 @@ var author$project$Main$focusCursor = function (rowNum) {
 				elm$core$Task$attempt,
 				author$project$Main$handleError,
 				elm$browser$Browser$Dom$focus(author$project$Main$cursor_id)),
-				(!rowNum) ? author$project$Main$resetViewport : elm$core$Platform$Cmd$none
+				(!rowNum) ? author$project$Main$jumpToTop('tableViewport') : elm$core$Platform$Cmd$none
 			]));
 };
 var author$project$Main$findRownum = function (loadedCsv) {

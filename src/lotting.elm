@@ -1,9 +1,9 @@
 import Browser exposing (Document, document)
-import Browser.Dom as Dom exposing (Error, focus, setViewport)
+import Browser.Dom as Dom exposing (Error, focus, setViewport, setViewportOf)
 import File exposing (File)
 import File.Select as Select exposing (file)
 import File.Download as Download exposing (string)
-import Html exposing (Html, Attribute, button, text, div, table, thead, tbody, tr, th, td, textarea, input, section)
+import Html exposing (Html, Attribute, button, text, div, table, thead, tbody, tr, th, td, textarea, input, section, h2)
 import Html.Events exposing (onClick, onInput, on, keyCode, custom)
 import Html.Attributes exposing (disabled, value, class, placeholder, autofocus, id, style)
 import Html.Lazy as Lazy exposing (lazy)
@@ -146,7 +146,7 @@ findRownum loadedCsv =
 focusCursor : Int -> Cmd Msg
 focusCursor rowNum =
   Cmd.batch [ Dom.focus cursor_id |> Task.attempt handleError
-            , if rowNum == 0 then resetViewport else Cmd.none
+            , if rowNum == 0 then jumpToTop "tableViewport" else Cmd.none
             ]
 
 newSelected : Point -> LoadedCsv -> LoadedCsv
@@ -169,8 +169,11 @@ exportCsv loadedCsv =
       file = List.map (String.join ",") unwrappedCsv |> String.join windows_newline
   in  Download.string (if loadedCsv.fileName == "" then "export.csv" else loadedCsv.fileName) csv_mime file
 
-resetViewport : Cmd Msg
-resetViewport = Task.perform (\_ -> Done) (Dom.setViewport 0 0)
+jumpToTop : String -> Cmd Msg
+jumpToTop viewPortId =
+  Dom.getViewportOf viewPortId
+    |> Task.andThen (\info -> Dom.setViewportOf viewPortId info.viewport.x 0)
+    |> Task.attempt handleError
 
 handleError : Result Error () -> Msg
 handleError result =
@@ -211,40 +214,41 @@ docView = Lazy.lazy view >> List.singleton >> Document "Smart Lotter"
 view : Model -> Html Msg
 view model =
   div [ id "all" ]
-    [ section [ class "section" ]
-        [ div [ class "container" ]
-            [ div [ class "columns" ]
-                [ div [ class "column is-one-quarter" ]
-                    [ div [ class "buttons has-addons" ]
-                        [ button [ onClick CsvRequested, class "button is-primary" ] [ text "Load CSV" ]
-                        , button [ onClick CsvRemoved, disabled (model.data == Nothing), class "button is-danger" ] [ text "Remove" ]
-                        , button [ onClick CsvExported, disabled (model.data == Nothing), class "button is-info" ] [ text "Export" ]
-                        ]
-                    ]
-                , div [ class "column is-one-fifth" ]
-                    [ input [ value <| Maybe.withDefault "" <| Maybe.map (.fileName) model.data,
-                              disabled (model.data == Nothing),
-                              onInput FilenameEdited,
-                              class "input",
-                              placeholder "File Name" ] []
-                    ]
+    [ div [ class "columns" ]
+        [ div [ class "column is-one-quarter section" ]
+            [ h2 [ class "title is-2" ] [ text "Smart Lotter" ]
+            , div [ class "buttons has-addons" ]
+                [ button [ onClick CsvRequested, class "button is-primary" ] [ text "Import" ]
+                , button [ onClick CsvRemoved, disabled (model.data == Nothing), class "button is-danger" ] [ text "Remove" ]
+                , button [ onClick CsvExported, disabled (model.data == Nothing), class "button is-info" ] [ text "Export" ]
                 ]
+            , input
+                [ value <| Maybe.withDefault "" <| Maybe.map (.fileName) model.data
+                ,  disabled (model.data == Nothing)
+                ,  onInput FilenameEdited
+                ,  class "input"
+                ,  placeholder "File Name"
+                ] []
             ]
-        ]
-    , section [ class "section" ]
-        [ div [ class "container" ]
-            [ case model.data of
-                Nothing -> div [] []
-                Just loadedCsv -> createTable loadedCsv
-            ]
+        , createTable model.data
         ]
     ]
 
-createTable : LoadedCsv -> Html Msg
-createTable loadedCsv =
-  table [ class "table is-bordered is-striped is-hoverable is-fullwidth table-fixed"
-        , on "keydown" (Decode.map (keyMapper >> KeyPressed) keyCode)
-        ] [createHead loadedCsv.csv.headers, createBody loadedCsv.selected loadedCsv.csv.records]
+createTable : Maybe LoadedCsv -> Html Msg
+createTable data =
+  case data of
+    Nothing ->
+      div [ class "table-empty column is-three-quarters" ] []
+    Just loadedCsv ->
+      div [ class "table-fixed column is-three-quarters", id "tableViewport" ]
+        [ table
+            [ class "table is-bordered is-striped is-hoverable is-fullwidth"
+            , on "keydown" (Decode.map (keyMapper >> KeyPressed) keyCode)
+            ]
+            [ createHead loadedCsv.csv.headers
+            , createBody loadedCsv.selected loadedCsv.csv.records
+            ]
+        ]
 
 createHead : List String -> Html Msg
 createHead = List.map (text >> List.singleton >> th []) >> tr [] >> List.singleton >> thead []
