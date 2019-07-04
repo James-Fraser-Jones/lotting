@@ -1,16 +1,18 @@
 import Browser exposing (Document, document)
-import Browser.Dom as Dom exposing (Error, focus, setViewport, setViewportOf)
+import Browser.Dom exposing (Error(..), focus, setViewport, setViewportOf, getViewportOf)
 import File exposing (File)
-import File.Select as Select exposing (file)
-import File.Download as Download exposing (string)
+import File.Select exposing (file)
+import File.Download exposing (string)
 import Html exposing (Html, Attribute, button, text, div, table, thead, tbody, tr, th, td, textarea, input, section, h2)
-import Html.Events exposing (onClick, onInput, on, keyCode, custom)
+import Html.Events exposing (onClick, onInput, on, keyCode, custom, onMouseDown, onMouseUp)
 import Html.Attributes exposing (disabled, value, class, placeholder, autofocus, id, style)
-import Html.Lazy as Lazy exposing (lazy)
+import Html.Lazy exposing (lazy)
 import Task exposing (perform, attempt)
-import Csv as C exposing (Csv, parse)
+import Csv exposing (Csv, parse)
 import Maybe exposing (withDefault)
-import Json.Decode as Decode exposing (map)
+import Json.Decode exposing (map)
+import Keyboard.Event exposing (KeyboardEvent, decodeKeyboardEvent)
+import Keyboard.Key exposing (Key(..))
 
 -- MAIN
 
@@ -30,9 +32,11 @@ type alias Model =
   }
 
 type alias LoadedCsv =
-  { csv : C.Csv
+  { csv : Csv
   , selected : Point
   , fileName : String
+  , colWidths : List Int
+  , resizing : Maybe Int
   }
 
 type alias Point =
@@ -46,36 +50,30 @@ type alias Point =
 --     }
 
 type Msg
-  = Done          --Generic
-  | Error String
-
-  | CsvRequested  --Csv
+--Generic
+  = NoOp
+  | HandleErrorEvent String
+  | HandleKeyboardEvent String KeyboardEvent
+--Csv
+  | CsvRequested
   | CsvSelected File
   | CsvLoaded String String
   | CsvRemoved
   | CsvExported
-
-  | CellSelected Int Int  --Cell
+--Cell
+  | CellSelected Int Int
   | CellEdited String
-
-  | FilenameEdited String --Filename
-
-  | KeyPressed Key
-
-type Key
-  = Up
-  | Down
-  | Left
-  | Right
-  | Enter
-  | Tab
-  | Other
+--Filename
+  | FilenameEdited String
+--Column resizing
+  | StartColumnResize Int
+  | ColumnResize
+  | EndColumnResize
 
 -- INIT
 
 init : () -> (Model, Cmd Msg)
-init _ =
-  (Model Nothing, Cmd.none)
+init _ = (Model Nothing, Cmd.none)
 
 -- UPDATE
 
@@ -83,19 +81,29 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
 
-    Done ->
+    NoOp ->
       ( model
       , Cmd.none
       )
 
-    Error message ->
-      ( model
+    HandleErrorEvent message ->
+      ( print message model
       , Cmd.none
       )
+
+    HandleKeyboardEvent message keyboardEvent ->
+      case message of
+        "movingCursor" -> let newModel = { model | data = Maybe.map (moveCursor keyboardEvent.keyCode) model.data }
+                          in ( newModel
+                             , Maybe.withDefault Cmd.none <| Maybe.map findRownum newModel.data
+                             )
+        _ -> ( model
+             , Cmd.none
+             )
 
     CsvRequested ->
       ( model
-      , Select.file [ csv_mime ] CsvSelected
+      , file [ csv_mime ] CsvSelected
       )
 
     CsvSelected file ->
@@ -104,7 +112,7 @@ update msg model =
       )
 
     CsvLoaded fileName fileContent ->
-      ( { model | data = Maybe.map (\x -> LoadedCsv x (Point 0 0) fileName) (C.parse fileContent |> silence) }
+      ( { model | data = Maybe.map (\x -> LoadedCsv x (Point 0 0) fileName (List.map (always 300) x.headers) Nothing) (parse fileContent |> silence) }
       , focusCursor 0
       )
 
@@ -133,11 +141,20 @@ update msg model =
       , Cmd.none
       )
 
-    KeyPressed key ->
-      let newModel = { model | data = Maybe.map (updateKey key) model.data }
-      in ( newModel
-         , Maybe.withDefault Cmd.none <| Maybe.map findRownum newModel.data
-         )
+    StartColumnResize colNum ->
+      ( { model | data = Maybe.map (updateResizing <| Just colNum) model.data }
+      , Cmd.none
+      )
+
+    ColumnResize ->
+      ( model
+      , Cmd.none
+      )
+
+    EndColumnResize ->
+      ( { model | data = Maybe.map (updateResizing Nothing) model.data }
+      , Cmd.none
+      )
 
 findRownum : LoadedCsv -> Cmd Msg
 findRownum loadedCsv =
@@ -145,7 +162,7 @@ findRownum loadedCsv =
 
 focusCursor : Int -> Cmd Msg
 focusCursor rowNum =
-  Cmd.batch [ Dom.focus cursor_id |> Task.attempt handleError
+  Cmd.batch [ focus cursor_id |> Task.attempt handleError
             , if rowNum == 0 then jumpToTop "tableViewport" else Cmd.none
             ]
 
@@ -167,33 +184,22 @@ exportCsv : LoadedCsv -> Cmd Msg
 exportCsv loadedCsv =
   let unwrappedCsv = loadedCsv.csv.headers :: loadedCsv.csv.records
       file = List.map (String.join ",") unwrappedCsv |> String.join windows_newline
-  in  Download.string (if loadedCsv.fileName == "" then "export.csv" else loadedCsv.fileName) csv_mime file
+  in  string (if loadedCsv.fileName == "" then "export.csv" else loadedCsv.fileName) csv_mime file
 
 jumpToTop : String -> Cmd Msg
 jumpToTop viewPortId =
-  Dom.getViewportOf viewPortId
-    |> Task.andThen (\info -> Dom.setViewportOf viewPortId info.viewport.x 0)
+  getViewportOf viewPortId
+    |> Task.andThen (\info -> setViewportOf viewPortId info.viewport.x 0)
     |> Task.attempt handleError
 
 handleError : Result Error () -> Msg
 handleError result =
   case result of
-    Err (Dom.NotFound message) -> Error message
-    Ok _ -> Done
+    Err (NotFound message) -> HandleErrorEvent message
+    Ok _ -> NoOp
 
-keyMapper : Int -> Key
-keyMapper n =
-  case n of
-    9 -> Tab
-    13 -> Enter
-    37 -> Left
-    38 -> Up
-    39 -> Right
-    40 -> Down
-    _ -> Other
-
-updateKey : Key -> LoadedCsv -> LoadedCsv
-updateKey key loadedCsv =
+moveCursor : Key -> LoadedCsv -> LoadedCsv
+moveCursor key loadedCsv =
   let old = loadedCsv.selected
       lastX = List.length loadedCsv.csv.headers - 1
       lastY = List.length loadedCsv.csv.records - 1
@@ -204,12 +210,16 @@ updateKey key loadedCsv =
     Up -> { loadedCsv | selected = Point (max (old.row - 1) 0) old.col }
     Right -> { loadedCsv | selected = Point old.row (min (old.col + 1) lastX) }
     Down -> { loadedCsv | selected = Point (min (old.row + 1) lastY) old.col }
-    Other -> loadedCsv
+    _ -> loadedCsv
+
+updateResizing : Maybe Int -> LoadedCsv -> LoadedCsv
+updateResizing m loadedCsv =
+  { loadedCsv | resizing = printt m }
 
 -- VIEW
 
 docView : Model -> Document Msg
-docView = Lazy.lazy view >> List.singleton >> Document "Smart Lotter"
+docView = lazy view >> List.singleton >> Document "Smart Lotter"
 
 view : Model -> Html Msg
 view model =
@@ -218,9 +228,9 @@ view model =
         [ div [ class "column is-one-quarter section" ]
             [ h2 [ class "title is-2" ] [ text "Smart Lotter" ]
             , div [ class "buttons has-addons" ]
-                [ button [ onClick CsvRequested, class "button is-primary" ] [ text "Import" ]
-                , button [ onClick CsvRemoved, disabled (model.data == Nothing), class "button is-danger" ] [ text "Remove" ]
-                , button [ onClick CsvExported, disabled (model.data == Nothing), class "button is-info" ] [ text "Export" ]
+                [ button [ onClick CsvRequested, class "button is-primary" ] [ text "Open" ]
+                , button [ onClick CsvRemoved, disabled (model.data == Nothing), class "button is-danger" ] [ text "Clear" ]
+                , button [ onClick CsvExported, disabled (model.data == Nothing), class "button is-info" ] [ text "Save" ]
                 ]
             , input
                 [ value <| Maybe.withDefault "" <| Maybe.map (.fileName) model.data
@@ -243,15 +253,29 @@ createTable data =
       div [ class "table-fixed column is-three-quarters", id "tableViewport" ]
         [ table
             [ class "table is-bordered is-striped is-hoverable is-fullwidth"
-            , on "keydown" (Decode.map (keyMapper >> KeyPressed) keyCode)
+            , onKeyboardEvent "keydown" "movingCursor"
             ]
-            [ createHead loadedCsv.csv.headers
+            [ createHead loadedCsv.colWidths loadedCsv.csv.headers
             , createBody loadedCsv.selected loadedCsv.csv.records
             ]
         ]
 
-createHead : List String -> Html Msg
-createHead = List.map (text >> List.singleton >> th []) >> tr [] >> List.singleton >> thead []
+onKeyboardEvent : String -> String -> Attribute Msg
+onKeyboardEvent eventName message =
+  on eventName <| map (HandleKeyboardEvent message) decodeKeyboardEvent
+
+createHead : List Int -> List String -> Html Msg
+createHead widths elems = zipWith (|>) widths (List.indexedMap createHeadCell elems) |> tr [] |> List.singleton |> thead []
+
+createHeadCell : Int -> String -> Int -> Html Msg
+createHeadCell colNum elem weight =
+  [ text elem
+  , div
+      [ class "slider"
+      , onMouseDown <| StartColumnResize colNum
+      , onMouseUp EndColumnResize
+      ] []
+  ] |> th [style "width" (String.fromInt weight ++ "px")]
 
 createBody : Point -> List (List String) -> Html Msg
 createBody point rows =
@@ -270,8 +294,7 @@ createCell point rowNum colNum elem =
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-  Sub.none
+subscriptions _ = Sub.none
 
 -- PRELUDE
 

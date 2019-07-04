@@ -4624,9 +4624,6 @@ var author$project$Main$CsvRequested = {$: 'CsvRequested'};
 var author$project$Main$FilenameEdited = function (a) {
 	return {$: 'FilenameEdited', a: a};
 };
-var author$project$Main$KeyPressed = function (a) {
-	return {$: 'KeyPressed', a: a};
-};
 var author$project$Main$CellEdited = function (a) {
 	return {$: 'CellEdited', a: a};
 };
@@ -5308,77 +5305,442 @@ var author$project$Main$createBody = F2(
 				author$project$Main$createRow(point),
 				rows));
 	});
-var elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
+var author$project$Main$EndColumnResize = {$: 'EndColumnResize'};
+var author$project$Main$StartColumnResize = function (a) {
+	return {$: 'StartColumnResize', a: a};
+};
+var elm$html$Html$div = _VirtualDom_node('div');
+var elm$html$Html$th = _VirtualDom_node('th');
+var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
+var elm$html$Html$Events$onMouseDown = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'mousedown',
+		elm$json$Json$Decode$succeed(msg));
+};
+var elm$html$Html$Events$onMouseUp = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'mouseup',
+		elm$json$Json$Decode$succeed(msg));
+};
+var author$project$Main$createHeadCell = F3(
+	function (colNum, elem, weight) {
+		return A2(
+			elm$html$Html$th,
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$Attributes$style,
+					'width',
+					elm$core$String$fromInt(weight) + 'px')
+				]),
+			_List_fromArray(
+				[
+					elm$html$Html$text(elem),
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							elm$html$Html$Attributes$class('slider'),
+							elm$html$Html$Events$onMouseDown(
+							author$project$Main$StartColumnResize(colNum)),
+							elm$html$Html$Events$onMouseUp(author$project$Main$EndColumnResize)
+						]),
+					_List_Nil)
+				]));
 	});
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
+var author$project$Main$zipWith = F3(
+	function (f, a, b) {
+		var _n0 = _Utils_Tuple2(a, b);
+		if (!_n0.a.b) {
+			return _List_Nil;
+		} else {
+			if (!_n0.b.b) {
+				return _List_Nil;
+			} else {
+				var _n1 = _n0.a;
+				var x = _n1.a;
+				var xs = _n1.b;
+				var _n2 = _n0.b;
+				var y = _n2.a;
+				var ys = _n2.b;
+				return A2(
+					elm$core$List$cons,
+					A2(f, x, y),
+					A3(author$project$Main$zipWith, f, xs, ys));
+			}
+		}
 	});
 var elm$core$List$singleton = function (value) {
 	return _List_fromArray(
 		[value]);
 };
-var elm$html$Html$th = _VirtualDom_node('th');
 var elm$html$Html$thead = _VirtualDom_node('thead');
-var author$project$Main$createHead = A2(
-	elm$core$Basics$composeR,
-	elm$core$List$map(
-		A2(
-			elm$core$Basics$composeR,
-			elm$html$Html$text,
-			A2(
-				elm$core$Basics$composeR,
-				elm$core$List$singleton,
-				elm$html$Html$th(_List_Nil)))),
+var author$project$Main$createHead = F2(
+	function (widths, elems) {
+		return A2(
+			elm$html$Html$thead,
+			_List_Nil,
+			elm$core$List$singleton(
+				A2(
+					elm$html$Html$tr,
+					_List_Nil,
+					A3(
+						author$project$Main$zipWith,
+						elm$core$Basics$apR,
+						widths,
+						A2(elm$core$List$indexedMap, author$project$Main$createHeadCell, elems)))));
+	});
+var Gizra$elm_keyboard_event$Keyboard$Event$KeyboardEvent = F7(
+	function (altKey, ctrlKey, key, keyCode, metaKey, repeat, shiftKey) {
+		return {altKey: altKey, ctrlKey: ctrlKey, key: key, keyCode: keyCode, metaKey: metaKey, repeat: repeat, shiftKey: shiftKey};
+	});
+var elm$core$String$isEmpty = function (string) {
+	return string === '';
+};
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$fail = _Json_fail;
+var elm$json$Json$Decode$oneOf = _Json_oneOf;
+var elm$json$Json$Decode$maybe = function (decoder) {
+	return elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, decoder),
+				elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing)
+			]));
+};
+var Gizra$elm_keyboard_event$Keyboard$Event$decodeKey = elm$json$Json$Decode$maybe(
 	A2(
-		elm$core$Basics$composeR,
-		elm$html$Html$tr(_List_Nil),
-		A2(
-			elm$core$Basics$composeR,
-			elm$core$List$singleton,
-			elm$html$Html$thead(_List_Nil))));
-var author$project$Main$Down = {$: 'Down'};
-var author$project$Main$Enter = {$: 'Enter'};
-var author$project$Main$Left = {$: 'Left'};
-var author$project$Main$Other = {$: 'Other'};
-var author$project$Main$Right = {$: 'Right'};
-var author$project$Main$Tab = {$: 'Tab'};
-var author$project$Main$Up = {$: 'Up'};
-var author$project$Main$keyMapper = function (n) {
-	switch (n) {
+		elm$json$Json$Decode$andThen,
+		function (key) {
+			return elm$core$String$isEmpty(key) ? elm$json$Json$Decode$fail('empty key') : elm$json$Json$Decode$succeed(key);
+		},
+		A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string)));
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var Gizra$elm_keyboard_event$Keyboard$Event$decodeNonZero = A2(
+	elm$json$Json$Decode$andThen,
+	function (code) {
+		return (!code) ? elm$json$Json$Decode$fail('code was zero') : elm$json$Json$Decode$succeed(code);
+	},
+	elm$json$Json$Decode$int);
+var Gizra$elm_keyboard_event$Keyboard$Event$decodeKeyCode = elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[
+			A2(elm$json$Json$Decode$field, 'keyCode', Gizra$elm_keyboard_event$Keyboard$Event$decodeNonZero),
+			A2(elm$json$Json$Decode$field, 'which', Gizra$elm_keyboard_event$Keyboard$Event$decodeNonZero),
+			A2(elm$json$Json$Decode$field, 'charCode', Gizra$elm_keyboard_event$Keyboard$Event$decodeNonZero),
+			elm$json$Json$Decode$succeed(0)
+		]));
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$A = {$: 'A'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Add = {$: 'Add'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Alt = {$: 'Alt'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Ambiguous = function (a) {
+	return {$: 'Ambiguous', a: a};
+};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$B = {$: 'B'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Backspace = {$: 'Backspace'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$C = {$: 'C'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$CapsLock = {$: 'CapsLock'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$ChromeSearch = {$: 'ChromeSearch'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Command = {$: 'Command'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Ctrl = function (a) {
+	return {$: 'Ctrl', a: a};
+};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$D = {$: 'D'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Decimal = {$: 'Decimal'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Delete = {$: 'Delete'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Divide = {$: 'Divide'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Down = {$: 'Down'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$E = {$: 'E'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Eight = {$: 'Eight'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$End = {$: 'End'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Enter = {$: 'Enter'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Escape = {$: 'Escape'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F = {$: 'F'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F1 = {$: 'F1'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F10 = {$: 'F10'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F11 = {$: 'F11'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F12 = {$: 'F12'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F2 = {$: 'F2'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F3 = {$: 'F3'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F4 = {$: 'F4'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F5 = {$: 'F5'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F6 = {$: 'F6'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F7 = {$: 'F7'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F8 = {$: 'F8'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$F9 = {$: 'F9'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Five = {$: 'Five'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Four = {$: 'Four'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$G = {$: 'G'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$H = {$: 'H'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Home = {$: 'Home'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$I = {$: 'I'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Insert = {$: 'Insert'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$J = {$: 'J'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$K = {$: 'K'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$L = {$: 'L'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Left = {$: 'Left'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$M = {$: 'M'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Multiply = {$: 'Multiply'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$N = {$: 'N'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Nine = {$: 'Nine'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumLock = {$: 'NumLock'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadEight = {$: 'NumpadEight'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadFive = {$: 'NumpadFive'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadFour = {$: 'NumpadFour'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadNine = {$: 'NumpadNine'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadOne = {$: 'NumpadOne'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadSeven = {$: 'NumpadSeven'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadSix = {$: 'NumpadSix'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadThree = {$: 'NumpadThree'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadTwo = {$: 'NumpadTwo'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadZero = {$: 'NumpadZero'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$O = {$: 'O'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$One = {$: 'One'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$P = {$: 'P'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$PageDown = {$: 'PageDown'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$PageUp = {$: 'PageUp'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$PauseBreak = {$: 'PauseBreak'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$PrintScreen = {$: 'PrintScreen'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Q = {$: 'Q'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$R = {$: 'R'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Right = {$: 'Right'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$S = {$: 'S'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$ScrollLock = {$: 'ScrollLock'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Seven = {$: 'Seven'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Shift = function (a) {
+	return {$: 'Shift', a: a};
+};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Six = {$: 'Six'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Spacebar = {$: 'Spacebar'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Subtract = {$: 'Subtract'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$T = {$: 'T'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Tab = {$: 'Tab'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Three = {$: 'Three'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Two = {$: 'Two'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$U = {$: 'U'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Unknown = function (a) {
+	return {$: 'Unknown', a: a};
+};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Up = {$: 'Up'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$V = {$: 'V'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$W = {$: 'W'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Windows = {$: 'Windows'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$X = {$: 'X'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Y = {$: 'Y'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Z = {$: 'Z'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$Zero = {$: 'Zero'};
+var SwiftsNamesake$proper_keyboard$Keyboard$Key$fromCode = function (keyCode) {
+	switch (keyCode) {
+		case 8:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Backspace;
 		case 9:
-			return author$project$Main$Tab;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Tab;
 		case 13:
-			return author$project$Main$Enter;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Enter;
+		case 16:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Shift(elm$core$Maybe$Nothing);
+		case 17:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Ctrl(elm$core$Maybe$Nothing);
+		case 18:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Alt;
+		case 19:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$PauseBreak;
+		case 20:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$CapsLock;
+		case 27:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Escape;
+		case 32:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Spacebar;
+		case 33:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$PageUp;
+		case 34:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$PageDown;
+		case 35:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$End;
+		case 36:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Home;
 		case 37:
-			return author$project$Main$Left;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Left;
 		case 38:
-			return author$project$Main$Up;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Up;
 		case 39:
-			return author$project$Main$Right;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Right;
 		case 40:
-			return author$project$Main$Down;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Down;
+		case 44:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$PrintScreen;
+		case 45:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Insert;
+		case 46:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Delete;
+		case 48:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Zero;
+		case 49:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$One;
+		case 50:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Two;
+		case 51:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Three;
+		case 52:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Four;
+		case 53:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Five;
+		case 54:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Six;
+		case 55:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Seven;
+		case 56:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Eight;
+		case 57:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Nine;
+		case 65:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$A;
+		case 66:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$B;
+		case 67:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$C;
+		case 68:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$D;
+		case 69:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$E;
+		case 70:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F;
+		case 71:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$G;
+		case 72:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$H;
+		case 73:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$I;
+		case 74:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$J;
+		case 75:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$K;
+		case 76:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$L;
+		case 77:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$M;
+		case 78:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$N;
+		case 79:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$O;
+		case 80:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$P;
+		case 81:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Q;
+		case 82:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$R;
+		case 83:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$S;
+		case 84:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$T;
+		case 85:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$U;
+		case 86:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$V;
+		case 87:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$W;
+		case 88:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$X;
+		case 89:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Y;
+		case 90:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Z;
+		case 91:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Ambiguous(
+				_List_fromArray(
+					[SwiftsNamesake$proper_keyboard$Keyboard$Key$Windows, SwiftsNamesake$proper_keyboard$Keyboard$Key$Command, SwiftsNamesake$proper_keyboard$Keyboard$Key$ChromeSearch]));
+		case 96:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadZero;
+		case 97:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadOne;
+		case 98:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadTwo;
+		case 99:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadThree;
+		case 100:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadFour;
+		case 101:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadFive;
+		case 102:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadSix;
+		case 103:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadSeven;
+		case 104:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadEight;
+		case 105:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumpadNine;
+		case 106:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Multiply;
+		case 107:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Add;
+		case 109:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Subtract;
+		case 110:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Decimal;
+		case 111:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Divide;
+		case 112:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F1;
+		case 113:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F2;
+		case 114:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F3;
+		case 115:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F4;
+		case 116:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F5;
+		case 117:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F6;
+		case 118:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F7;
+		case 119:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F8;
+		case 120:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F9;
+		case 121:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F10;
+		case 122:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F11;
+		case 123:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$F12;
+		case 144:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$NumLock;
+		case 145:
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$ScrollLock;
 		default:
-			return author$project$Main$Other;
+			return SwiftsNamesake$proper_keyboard$Keyboard$Key$Unknown(keyCode);
 	}
 };
-var elm$html$Html$div = _VirtualDom_node('div');
+var elm$json$Json$Decode$bool = _Json_decodeBool;
+var elm$json$Json$Decode$map7 = _Json_map7;
+var Gizra$elm_keyboard_event$Keyboard$Event$decodeKeyboardEvent = A8(
+	elm$json$Json$Decode$map7,
+	Gizra$elm_keyboard_event$Keyboard$Event$KeyboardEvent,
+	A2(elm$json$Json$Decode$field, 'altKey', elm$json$Json$Decode$bool),
+	A2(elm$json$Json$Decode$field, 'ctrlKey', elm$json$Json$Decode$bool),
+	Gizra$elm_keyboard_event$Keyboard$Event$decodeKey,
+	A2(elm$json$Json$Decode$map, SwiftsNamesake$proper_keyboard$Keyboard$Key$fromCode, Gizra$elm_keyboard_event$Keyboard$Event$decodeKeyCode),
+	A2(elm$json$Json$Decode$field, 'metaKey', elm$json$Json$Decode$bool),
+	A2(elm$json$Json$Decode$field, 'repeat', elm$json$Json$Decode$bool),
+	A2(elm$json$Json$Decode$field, 'shiftKey', elm$json$Json$Decode$bool));
+var author$project$Main$HandleKeyboardEvent = F2(
+	function (a, b) {
+		return {$: 'HandleKeyboardEvent', a: a, b: b};
+	});
+var author$project$Main$onKeyboardEvent = F2(
+	function (eventName, message) {
+		return A2(
+			elm$html$Html$Events$on,
+			eventName,
+			A2(
+				elm$json$Json$Decode$map,
+				author$project$Main$HandleKeyboardEvent(message),
+				Gizra$elm_keyboard_event$Keyboard$Event$decodeKeyboardEvent));
+	});
 var elm$html$Html$table = _VirtualDom_node('table');
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var elm$html$Html$Events$keyCode = A2(elm$json$Json$Decode$field, 'keyCode', elm$json$Json$Decode$int);
 var author$project$Main$createTable = function (data) {
 	if (data.$ === 'Nothing') {
 		return A2(
@@ -5404,17 +5766,11 @@ var author$project$Main$createTable = function (data) {
 					_List_fromArray(
 						[
 							elm$html$Html$Attributes$class('table is-bordered is-striped is-hoverable is-fullwidth'),
-							A2(
-							elm$html$Html$Events$on,
-							'keydown',
-							A2(
-								elm$json$Json$Decode$map,
-								A2(elm$core$Basics$composeR, author$project$Main$keyMapper, author$project$Main$KeyPressed),
-								elm$html$Html$Events$keyCode))
+							A2(author$project$Main$onKeyboardEvent, 'keydown', 'movingCursor')
 						]),
 					_List_fromArray(
 						[
-							author$project$Main$createHead(loadedCsv.csv.headers),
+							A2(author$project$Main$createHead, loadedCsv.colWidths, loadedCsv.csv.headers),
 							A2(author$project$Main$createBody, loadedCsv.selected, loadedCsv.csv.records)
 						]))
 				]));
@@ -5503,7 +5859,7 @@ var author$project$Main$view = function (model) {
 											]),
 										_List_fromArray(
 											[
-												elm$html$Html$text('Import')
+												elm$html$Html$text('Open')
 											])),
 										A2(
 										elm$html$Html$button,
@@ -5516,7 +5872,7 @@ var author$project$Main$view = function (model) {
 											]),
 										_List_fromArray(
 											[
-												elm$html$Html$text('Remove')
+												elm$html$Html$text('Clear')
 											])),
 										A2(
 										elm$html$Html$button,
@@ -5529,7 +5885,7 @@ var author$project$Main$view = function (model) {
 											]),
 										_List_fromArray(
 											[
-												elm$html$Html$text('Export')
+												elm$html$Html$text('Save')
 											]))
 									])),
 								A2(
@@ -5562,6 +5918,11 @@ var elm$browser$Browser$Document = F2(
 	function (title, body) {
 		return {body: body, title: title};
 	});
+var elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
 var elm$virtual_dom$VirtualDom$lazy = _VirtualDom_lazy;
 var elm$html$Html$Lazy$lazy = elm$virtual_dom$VirtualDom$lazy;
 var author$project$Main$docView = A2(
@@ -5593,12 +5954,26 @@ var author$project$Main$CsvLoaded = F2(
 var author$project$Main$CsvSelected = function (a) {
 	return {$: 'CsvSelected', a: a};
 };
-var author$project$Main$LoadedCsv = F3(
-	function (csv, selected, fileName) {
-		return {csv: csv, fileName: fileName, selected: selected};
+var author$project$Main$LoadedCsv = F5(
+	function (csv, selected, fileName, colWidths, resizing) {
+		return {colWidths: colWidths, csv: csv, fileName: fileName, resizing: resizing, selected: selected};
 	});
 var author$project$Main$csv_mime = 'text/csv';
 var author$project$Main$windows_newline = '\r\n';
+var elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
 var elm$core$Basics$never = function (_n0) {
 	never:
 	while (true) {
@@ -5713,16 +6088,16 @@ var author$project$Main$exportCsv = function (loadedCsv) {
 		author$project$Main$csv_mime,
 		file);
 };
-var author$project$Main$Done = {$: 'Done'};
-var author$project$Main$Error = function (a) {
-	return {$: 'Error', a: a};
+var author$project$Main$HandleErrorEvent = function (a) {
+	return {$: 'HandleErrorEvent', a: a};
 };
+var author$project$Main$NoOp = {$: 'NoOp'};
 var author$project$Main$handleError = function (result) {
 	if (result.$ === 'Err') {
 		var message = result.a.a;
-		return author$project$Main$Error(message);
+		return author$project$Main$HandleErrorEvent(message);
 	} else {
-		return author$project$Main$Done;
+		return author$project$Main$NoOp;
 	}
 };
 var elm$browser$Browser$External = function (a) {
@@ -5748,9 +6123,6 @@ var elm$core$String$startsWith = _String_startsWith;
 var elm$url$Url$Http = {$: 'Http'};
 var elm$url$Url$Https = {$: 'Https'};
 var elm$core$String$indexes = _String_indexes;
-var elm$core$String$isEmpty = function (string) {
-	return string === '';
-};
 var elm$core$String$left = F2(
 	function (n, string) {
 		return (n < 1) ? '' : A3(elm$core$String$slice, 0, n, string);
@@ -5915,76 +6287,11 @@ var author$project$Main$focusCursor = function (rowNum) {
 var author$project$Main$findRownum = function (loadedCsv) {
 	return author$project$Main$focusCursor(loadedCsv.selected.row);
 };
-var author$project$Main$updateAt = F3(
-	function (n, f, lst) {
-		var _n0 = _Utils_Tuple2(n, lst);
-		if (!_n0.b.b) {
-			return _List_Nil;
-		} else {
-			if (!_n0.a) {
-				var _n1 = _n0.b;
-				var x = _n1.a;
-				var xs = _n1.b;
-				return A2(
-					elm$core$List$cons,
-					f(x),
-					xs);
-			} else {
-				var nn = _n0.a;
-				var _n2 = _n0.b;
-				var x = _n2.a;
-				var xs = _n2.b;
-				return A2(
-					elm$core$List$cons,
-					x,
-					A3(author$project$Main$updateAt, nn - 1, f, xs));
-			}
-		}
-	});
-var elm$core$Basics$always = F2(
-	function (a, _n0) {
-		return a;
-	});
-var author$project$Main$newEdit = F2(
-	function (str, loadedCsv) {
-		var updateRecord = A2(
-			author$project$Main$updateAt,
-			loadedCsv.selected.col,
-			elm$core$Basics$always(str));
-		var oldCsv = loadedCsv.csv;
-		var newRecords = A3(author$project$Main$updateAt, loadedCsv.selected.row, updateRecord, loadedCsv.csv.records);
-		var newCsv = _Utils_update(
-			oldCsv,
-			{records: newRecords});
-		return _Utils_update(
-			loadedCsv,
-			{csv: newCsv});
-	});
-var author$project$Main$newFilename = F2(
-	function (str, loadedCsv) {
-		return _Utils_update(
-			loadedCsv,
-			{fileName: str});
-	});
-var author$project$Main$newSelected = F2(
-	function (point, loadedCsv) {
-		return _Utils_update(
-			loadedCsv,
-			{selected: point});
-	});
-var author$project$Main$silence = function (result) {
-	if (result.$ === 'Ok') {
-		var value = result.a;
-		return elm$core$Maybe$Just(value);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
 var elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
-var author$project$Main$updateKey = F2(
+var author$project$Main$moveCursor = F2(
 	function (key, loadedCsv) {
 		var old = loadedCsv.selected;
 		var lastY = elm$core$List$length(loadedCsv.csv.records) - 1;
@@ -6047,6 +6354,94 @@ var author$project$Main$updateKey = F2(
 			default:
 				return loadedCsv;
 		}
+	});
+var author$project$Main$updateAt = F3(
+	function (n, f, lst) {
+		var _n0 = _Utils_Tuple2(n, lst);
+		if (!_n0.b.b) {
+			return _List_Nil;
+		} else {
+			if (!_n0.a) {
+				var _n1 = _n0.b;
+				var x = _n1.a;
+				var xs = _n1.b;
+				return A2(
+					elm$core$List$cons,
+					f(x),
+					xs);
+			} else {
+				var nn = _n0.a;
+				var _n2 = _n0.b;
+				var x = _n2.a;
+				var xs = _n2.b;
+				return A2(
+					elm$core$List$cons,
+					x,
+					A3(author$project$Main$updateAt, nn - 1, f, xs));
+			}
+		}
+	});
+var elm$core$Basics$always = F2(
+	function (a, _n0) {
+		return a;
+	});
+var author$project$Main$newEdit = F2(
+	function (str, loadedCsv) {
+		var updateRecord = A2(
+			author$project$Main$updateAt,
+			loadedCsv.selected.col,
+			elm$core$Basics$always(str));
+		var oldCsv = loadedCsv.csv;
+		var newRecords = A3(author$project$Main$updateAt, loadedCsv.selected.row, updateRecord, loadedCsv.csv.records);
+		var newCsv = _Utils_update(
+			oldCsv,
+			{records: newRecords});
+		return _Utils_update(
+			loadedCsv,
+			{csv: newCsv});
+	});
+var author$project$Main$newFilename = F2(
+	function (str, loadedCsv) {
+		return _Utils_update(
+			loadedCsv,
+			{fileName: str});
+	});
+var author$project$Main$newSelected = F2(
+	function (point, loadedCsv) {
+		return _Utils_update(
+			loadedCsv,
+			{selected: point});
+	});
+var elm$core$Debug$log = _Debug_log;
+var elm$core$Debug$toString = _Debug_toString;
+var author$project$Main$print = F2(
+	function (a, b) {
+		return A2(
+			elm$core$Basics$always,
+			b,
+			A2(
+				elm$core$Debug$log,
+				'',
+				elm$core$Debug$toString(a)));
+	});
+var author$project$Main$silence = function (result) {
+	if (result.$ === 'Ok') {
+		var value = result.a;
+		return elm$core$Maybe$Just(value);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Main$printt = function (a) {
+	return A2(author$project$Main$print, a, a);
+};
+var author$project$Main$updateResizing = F2(
+	function (m, loadedCsv) {
+		return _Utils_update(
+			loadedCsv,
+			{
+				resizing: author$project$Main$printt(m)
+			});
 	});
 var elm$file$File$name = _File_name;
 var elm$file$File$toString = _File_toString;
@@ -6727,11 +7122,34 @@ var periodic$elm_csv$Csv$parse = function (s) {
 var author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'Done':
+			case 'NoOp':
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
-			case 'Error':
+			case 'HandleErrorEvent':
 				var message = msg.a;
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(
+					A2(author$project$Main$print, message, model),
+					elm$core$Platform$Cmd$none);
+			case 'HandleKeyboardEvent':
+				var message = msg.a;
+				var keyboardEvent = msg.b;
+				if (message === 'movingCursor') {
+					var newModel = _Utils_update(
+						model,
+						{
+							data: A2(
+								elm$core$Maybe$map,
+								author$project$Main$moveCursor(keyboardEvent.keyCode),
+								model.data)
+						});
+					return _Utils_Tuple2(
+						newModel,
+						A2(
+							elm$core$Maybe$withDefault,
+							elm$core$Platform$Cmd$none,
+							A2(elm$core$Maybe$map, author$project$Main$findRownum, newModel.data)));
+				} else {
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
 			case 'CsvRequested':
 				return _Utils_Tuple2(
 					model,
@@ -6759,11 +7177,16 @@ var author$project$Main$update = F2(
 							data: A2(
 								elm$core$Maybe$map,
 								function (x) {
-									return A3(
+									return A5(
 										author$project$Main$LoadedCsv,
 										x,
 										A2(author$project$Main$Point, 0, 0),
-										fileName);
+										fileName,
+										A2(
+											elm$core$List$map,
+											elm$core$Basics$always(300),
+											x.headers),
+										elm$core$Maybe$Nothing);
 								},
 								author$project$Main$silence(
 									periodic$elm_csv$Csv$parse(fileContent)))
@@ -6820,22 +7243,32 @@ var author$project$Main$update = F2(
 								model.data)
 						}),
 					elm$core$Platform$Cmd$none);
-			default:
-				var key = msg.a;
-				var newModel = _Utils_update(
-					model,
-					{
-						data: A2(
-							elm$core$Maybe$map,
-							author$project$Main$updateKey(key),
-							model.data)
-					});
+			case 'StartColumnResize':
+				var colNum = msg.a;
 				return _Utils_Tuple2(
-					newModel,
-					A2(
-						elm$core$Maybe$withDefault,
-						elm$core$Platform$Cmd$none,
-						A2(elm$core$Maybe$map, author$project$Main$findRownum, newModel.data)));
+					_Utils_update(
+						model,
+						{
+							data: A2(
+								elm$core$Maybe$map,
+								author$project$Main$updateResizing(
+									elm$core$Maybe$Just(colNum)),
+								model.data)
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'ColumnResize':
+				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							data: A2(
+								elm$core$Maybe$map,
+								author$project$Main$updateResizing(elm$core$Maybe$Nothing),
+								model.data)
+						}),
+					elm$core$Platform$Cmd$none);
 		}
 	});
 var elm$browser$Browser$document = _Browser_document;

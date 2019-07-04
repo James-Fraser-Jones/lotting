@@ -26,3 +26,12 @@
   height: 100vh;
   background-color: hsl(0, 0%, 96%) !important;
 }
+
+.slider {
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    width: 5px;
+    position: absolute;
+    cursor: col-resize;
+}
