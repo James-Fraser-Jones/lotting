@@ -1,0 +1,55 @@
+/***********************************/
+/*Make table header sticky*/
+
+.table-sticky {
+  overflow: auto !important;
+  height: 100vh !important;
+}
+
+.table-sticky thead th {
+  position: sticky !important;
+  top: 0 !important;
+}
+
+/***********************************/
+/*Color styling table header*/
+
+.header-color th {
+  background-color: #0E6EB8 !important;
+  color: white !important;
+}
+
+/***********************************/
+/*Forces header and subsequent rows to be same height*/
+
+/*Add 1px top border back onto top non-header row*/
+.first-row-height-fix td {
+  border-top: 1px solid rgba(34,36,38,.1) !important;
+}
+
+/*Force header to have same vertical padding as other rows*/
+.row-height-fix th {
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+}
+
+/***********************************/
+/*Removes grid gutters*/
+
+.remove-gutters {
+  margin: 0 !important;
+}
+
+.remove-gutters .row {
+  padding: 0 !important;
+}
+
+.remove-gutters .column {
+  padding: 0 !important;
+}
+
+/***********************************/
+
+.horizontal-center {
+  text-align: center !important;
+}
